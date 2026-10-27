@@ -203,7 +203,7 @@ function stageBlock(st, iso) {
   const hotels = hotelsFor(st);
   return `<section class="card stage" style="--c:${c.color}">
     <span class="motif">${MOTIFS[st.c] || ""}</span>
-    <p class="kicker">${esc(c.name)}</p>
+    <p class="kicker">Étape ${stageNum(st.id)} sur ${MAP_STAGES.length} · ${esc(c.name)}</p>
     <h2>${esc(st.name)}</h2>
     <p class="muted">${esc(fmt(st.from))} → ${esc(fmt(st.to))} · ${daysBetween(st.from, st.to)} ${daysBetween(st.from, st.to) > 1 ? "nuits" : "nuit"}</p>
     ${wxLine(st)}
@@ -365,10 +365,11 @@ function tripMap(t) {
     <div class="mapchips">${MAP_STAGES.map((st, i) => `<button class="chip" data-stage="${st.id}" style="--c:${COUNTRIES[st.c].color}"><i>${i + 1}</i>${esc(st.name.replace(" (nuit tampon)", ""))}</button>`).join("")}</div>
   </section>`;
 }
+function stageNum(id) { const i = MAP_STAGES.findIndex((x) => x.id === (id === "kl1" ? "kl2" : id)); return i + 1; }
 function openStage(id) {
   const st = stageById[id]; if (!st) return;
   const days = DAYS.filter(([iso, sid]) => (sid || (stageOn(iso) || {}).id) === id);
-  const sh = openSheet(`<div class="sheet-head"><h2>${esc(st.name)}</h2><button class="x" data-close aria-label="Fermer">✕</button></div>
+  const sh = openSheet(`<div class="sheet-head"><h2><span class="stnum big" style="--c:${COUNTRIES[st.c].color}">${stageNum(st.id)}</span>${esc(st.name)}</h2><button class="x" data-close aria-label="Fermer">✕</button></div>
     ${stageBlock(st, st.from)}
     <h2 class="sect">Les jours</h2>
     ${days.map(([iso, , trj, act, nuit]) => `<button class="row" style="--c:${COUNTRIES[st.c].color}" data-day="${iso}"><span class="date">${esc(fmt(iso))}</span><span class="txt"><strong>${esc(act || trj || "")}</strong><small>${esc(nuit)}</small></span></button>`).join("")}`);
