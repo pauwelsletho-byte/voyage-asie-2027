@@ -187,7 +187,7 @@ function resaCard(r) {
   return `<button class="card resa ${r.status}" data-resa="${esc(r.id)}">
     <span class="rico t-${r.type}">${icon(r.type)}</span>
     <span class="rmain"><strong>${esc(r.title)}</strong>
-      <small>${esc(fmt(r.date))}${r.time ? " · " + esc(r.time) : ""}${r.ref ? " · n° " + esc(r.ref) : ""}${r.price ? " · " + esc(r.price) : ""}</small>${bk && r.status !== "reserve" ? `<small class="bk ${bk.from <= todayIso() ? "now" : ""}">${bk.from <= todayIso() ? "À faire maintenant" : "À réserver : " + esc(bk.when)}${bk.sites.length ? " · " + esc(bk.sites.slice(0, 3).map((x) => x[0]).join(", ")) : ""}</small>` : ""}</span>
+      <small>${esc(fmt(r.date))}${r.time ? " · " + esc(r.time) : ""}${r.ref ? " · n° " + esc(r.ref) : ""}${r.paid ? " · payé " + esc(money(r.paid)) : r.price ? " · " + esc(r.price) : ""}</small>${bk && r.status !== "reserve" ? `<small class="bk ${bk.from <= todayIso() ? "now" : ""}">${bk.from <= todayIso() ? "À faire maintenant" : "À réserver : " + esc(bk.when)}${bk.sites.length ? " · " + esc(bk.sites.slice(0, 3).map((x) => x[0]).join(", ")) : ""}</small>` : ""}</span>
     <span class="rside"><span class="badge ${r.status}">${STATUS[r.status] || "—"}</span>${nf ? `<span class="clip">${nf} ${nf > 1 ? "fichiers" : "fichier"}</span>` : ""}</span>
   </button>`;
 }
@@ -403,7 +403,11 @@ function openResa(r) {
       </div>
       <div class="two">
         <label>N° de réservation<input name="ref" value="${esc(r.ref || "")}" autocapitalize="characters"></label>
-        <label>Prix<input name="price" value="${esc(r.price || "")}"></label>
+        <label>Prix estimé<input name="price" value="${esc(r.price || "")}"></label>
+      </div>
+      <div class="two">
+        <label>Montant payé pour 2 (€)<input name="paid" inputmode="decimal" value="${esc(r.paid ?? "")}" placeholder="Une fois payé"></label>
+        <label>Payé par<select name="paidBy">${Object.entries(people()).map(([k, n]) => `<option value="${k}" ${(r.paidBy || me()) === k ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
       </div>
       <label>Adresse ou lieu<input name="place" value="${esc(r.place || "")}"></label>
       <label>Adresse en langue locale (à montrer au chauffeur)<textarea name="localAddr" rows="2" placeholder="Copiez ici l'adresse en chinois ou en vietnamien de la confirmation">${esc(r.localAddr || "")}</textarea></label>
@@ -442,7 +446,7 @@ function openResa(r) {
     }
     if (!fs.textContent.startsWith("Impossible")) fs.textContent = navigator.onLine ? "" : "Hors ligne : le fichier sera envoyé à l'autre téléphone au retour du réseau.";
   };
-  const collect = () => { const f = $("#rf", sh).elements; return { type: f.type.value, title: f.title.value.trim(), status: f.status.value, date: f.date.value, time: f.time.value, ref: f.ref.value.trim(), price: f.price.value.trim(), place: f.place.value.trim(), localAddr: f.localAddr.value.trim(), notes: f.notes.value.trim() }; };
+  const collect = () => { const f = $("#rf", sh).elements; return { type: f.type.value, title: f.title.value.trim(), status: f.status.value, date: f.date.value, time: f.time.value, ref: f.ref.value.trim(), price: f.price.value.trim(), paid: parseFloat(String(f.paid.value).replace(",", ".").replace(/[^\d.]/g, "")) || null, paidBy: f.paidBy.value, place: f.place.value.trim(), localAddr: f.localAddr.value.trim(), notes: f.notes.value.trim() }; };
   const sa = $("#showaddr", sh); if (sa) sa.onclick = () => showBig($("#rf", sh).elements.localAddr.value, $("#rf", sh).elements.title.value);
   $("#rf", sh).onsubmit = async (e) => { e.preventDefault(); store().put("resas", r.id, { ...collect(), files, by: S.user?.email || "" }); closeSheet(); };
   const del = $("#del", sh);
@@ -531,12 +535,25 @@ const setMe = (v) => { try { localStorage.setItem("voyage-me", v); } catch {} };
 const countryOn = (iso) => (stageOn(iso) || stageById[dayRow(iso)?.[1]])?.c || "fr";
 
 /* ---------- Dépenses ---------- */
+// Réservations payées → comptées dans le budget (un hôtel est réparti sur ses nuits)
+function resaSpend() {
+  const out = [];
+  S.resas.filter((r) => Number(r.paid) > 0 && r.date).forEach((r) => {
+    const n = r.type === "hotel" ? Number((r.title || "").match(/\((\d+) nuits?\)/)?.[1] || 1) : 1;
+    for (let i = 0; i < n; i++) {
+      const iso = isoOf(new Date(D(r.date).getTime() + i * 86400000));
+      out.push({ date: iso, eur: r.paid / n, payer: r.paidBy || "p1", split: "both", pre: true });
+    }
+  });
+  return out;
+}
+const INTL_EST = 1760; // vols Nice ↔ Asie pour deux, prévus à part
 // Poids de coût par pays (Hong Kong et Malaisie plus chers, Vietnam moins)
 const COST_W = { hk: 1.6, cn: 1, vn: 0.8, kh: 0.9, my: 1.2, fr: 0 };
 function budgetPlan(budget) {
   const days = DAYS.map(([iso]) => [iso, countryOn(iso)]);
   const sumW = days.reduce((t, [, c]) => t + (COST_W[c] || 0), 0) || 1;
-  const perDay = (c) => (budget * (COST_W[c] || 0)) / sumW;
+  const perDay = (c) => (Math.max(0, budget - INTL_EST) * (COST_W[c] || 0)) / sumW;
   const nDays = {}; days.forEach(([, c]) => { if (COST_W[c]) nDays[c] = (nDays[c] || 0) + 1; });
   return { days, perDay, nDays };
 }
@@ -553,7 +570,7 @@ function budgetDaily(ex, budget) {
     const rest = budget - ex.reduce((s, e) => s + (e.eur || 0), 0);
     const diff = plannedSoFar - spentSoFar;
     top = `<section class="card today-budget">
-      <div class="cbar ${sp > p ? "over" : ""}" style="--c:${COUNTRIES[c].color}"><span>Aujourd'hui</span><b>${money(sp)} <small>/ ${money(Math.round(p))}</small></b><i style="--p:${Math.min(1, sp / (p || 1))}"></i></div>
+      <div class="cbar ${sp > p ? "over" : ""}" style="--c:${COUNTRIES[c].color}"><span>Aujourd'hui</span><b>${money(Math.round(sp))} <small>/ ${money(Math.round(p))}</small></b><i style="--p:${Math.min(1, sp / (p || 1))}"></i></div>
       <p class="bud-msg ${diff >= 0 ? "ok" : "warn"}">${diff >= 0 ? `Vous avez <b>${money(Math.round(diff))}</b> d'avance sur le budget prévu` : `Vous avez dépassé le budget prévu de <b>${money(Math.round(-diff))}</b>`} depuis le départ.</p>
       ${left ? `<p class="muted small">Il reste ${money(Math.round(rest))}, soit environ ${money(Math.round(rest / left))} par jour pour les ${left} jours restants.</p>` : ""}
     </section>`;
@@ -565,28 +582,31 @@ function budgetDaily(ex, budget) {
       <b>${sp ? money(Math.round(sp)) + " <small>/ " : "<small>"}${money(Math.round(planned))}</small></b><i style="--p:${Math.min(1, sp / planned)}"></i>
       <small class="muted cday">Prévu ${money(Math.round(plan.perDay(c)))} par jour${elapsed && sp ? ` · dépensé ${money(Math.round(sp / elapsed))} par jour en moyenne` : ""}</small></div>`;
   }).join("");
-  const other = by.fr ? `<div class="cbar" style="--c:${COUNTRIES.fr.color}"><span>Hors étapes</span><b>${money(Math.round(by.fr))}</b><i style="--p:0"></i></div>` : "";
+  const fr = by.fr || 0;
+  const other = `<div class="cbar ${fr > INTL_EST ? "over" : ""}" style="--c:${COUNTRIES.fr.color}"><span>Vols internationaux et divers</span><b>${fr ? money(Math.round(fr)) + " <small>/ " : "<small>"}${money(INTL_EST)}</small></b><i style="--p:${Math.min(1, fr / INTL_EST)}"></i></div>`;
   return `${top}<h2 class="sect">Budget par pays</h2><div class="card">${rows}${other}
-    <p class="muted small">Le budget est réparti selon le coût de la vie : plus élevé à Hong Kong et en Malaisie, plus bas au Vietnam. Il se règle dans Outils › Réglages.</p></div>`;
+    <p class="muted small">Tout compte : dépenses sur place et réservations payées (un hôtel est réparti sur ses nuits). Le budget est réparti selon le coût de la vie, plus élevé à Hong Kong et en Malaisie, plus bas au Vietnam ; il se règle dans Outils › Réglages.</p></div>`;
 }
 
 function viewMoney() {
   const P = people(); const budget = Number(S.settings.budget?.total || 10000);
   const ex = [...S.expenses].sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.createdAt || 0) - (a.createdAt || 0));
-  const total = ex.reduce((t, e) => t + (e.eur || 0), 0);
+  const pre = resaSpend(), all = [...ex, ...pre];
+  const total = all.reduce((t, e) => t + (e.eur || 0), 0), preTotal = pre.reduce((t, e) => t + e.eur, 0);
   const net = { p1: 0, p2: 0 };
-  ex.forEach((e) => { const v = e.eur || 0, payer = e.payer || "p1", other = payer === "p1" ? "p2" : "p1";
+  all.forEach((e) => { const v = e.eur || 0, payer = e.payer || "p1", other = payer === "p1" ? "p2" : "p1";
     net[payer] += v; if (e.split === "payer") net[payer] -= v; else if (e.split === "other") net[other] -= v; else { net.p1 -= v / 2; net.p2 -= v / 2; } });
-  const owe = net.p1 > 0.5 ? `${esc(P.p2)} doit ${money(net.p1)} à ${esc(P.p1)}` : net.p2 > 0.5 ? `${esc(P.p1)} doit ${money(net.p2)} à ${esc(P.p2)}` : "Vous êtes quittes";
+  const owe = net.p1 > 0.5 ? `${esc(P.p2)} doit ${money(Math.round(net.p1))} à ${esc(P.p1)}` : net.p2 > 0.5 ? `${esc(P.p1)} doit ${money(Math.round(net.p2))} à ${esc(P.p2)}` : "Vous êtes quittes";
   const byCountry = {}; ex.forEach((e) => { const c = e.country || countryOn(e.date); byCountry[c] = (byCountry[c] || 0) + (e.eur || 0); });
   const maxC = Math.max(1, ...Object.values(byCountry));
   let lastD = "";
   return `<section class="hero money coin">
-      <p class="kicker">Dépensé sur place, à deux</p><p class="big">${money(total)}</p>
+      <p class="kicker">Dépensé à deux, tout compris</p><p class="big">${money(Math.round(total))}</p>
+      ${preTotal ? `<p class="muted small">dont ${money(Math.round(preTotal))} de réservations payées · ${money(Math.round(total - preTotal))} sur place</p>` : ""}
       <div class="bars"><div><span>Budget ${money(budget)}</span><b>${Math.round((total / budget) * 100)} %</b><i style="--p:${Math.min(1, total / budget)}"></i></div></div>
       <p class="owe">${owe}</p>
     </section>
-    ${budgetDaily(ex, budget)}
+    ${budgetDaily(all, budget)}
     ${ex.map((e) => { const h = e.date !== lastD ? `<h2 class="sect">${esc(fmtLong(e.date))}</h2>` : ""; lastD = e.date;
       return h + `<button class="card exp" data-exp="${esc(e.id)}"><span class="emain"><strong>${esc(e.desc || CATEGORIES[e.cat] || "Dépense")}</strong>
         <small>${esc(CATEGORIES[e.cat] || "")} · payé par ${esc(P[e.payer] || "")}${e.split === "payer" ? " (pour lui/elle)" : e.split === "other" ? " (pour l'autre)" : ""}</small></span>
@@ -712,7 +732,7 @@ function viewSettings() {
       <label>Prénom 2<input name="p2" value="${esc(S.settings.people?.p2 || "")}" placeholder="Personne 2"></label></div>
     <label>Sur ce téléphone, je suis<select name="me"><option value="p1" ${me() === "p1" ? "selected" : ""}>${esc(P.p1)}</option><option value="p2" ${me() === "p2" ? "selected" : ""}>${esc(P.p2)}</option></select></label>
     <label>Apparence (sur ce téléphone)<select name="theme"><option value="light" ${getTheme() === "light" ? "selected" : ""}>Clair</option><option value="dark" ${getTheme() === "dark" ? "selected" : ""}>Sombre</option><option value="auto" ${getTheme() === "auto" ? "selected" : ""}>Comme l'iPhone</option></select></label>
-    <label>Budget sur place pour deux (€)<input name="budget" inputmode="numeric" value="${esc(budget)}"></label>
+    <label>Budget total du voyage pour deux, vols et logements compris (€)<input name="budget" inputmode="numeric" value="${esc(budget)}"></label>
     <button class="btn primary">Enregistrer</button></form>
     <div class="card"><p class="muted small">Connecté : ${esc(S.user?.email || "")}</p>${isDemo() ? "" : `<button class="btn danger sm" id="logout">Se déconnecter</button>`}</div>`;
 }
