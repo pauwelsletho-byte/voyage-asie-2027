@@ -1,5 +1,6 @@
 import { TRIP, COUNTRIES, STAGES, DAYS, SEED_RESAS, CHECKLIST } from "./data.js";
 import { initStore, store, isDemo } from "./store.js";
+import { landscape, MOTIFS, TOOL_ICONS } from "./decor.js";
 import { CURRENCIES, CURRENCY_OF, CATEGORIES, PHRASES, LOCAL_PLACES, EMERGENCY, VAULT_SEED } from "./extras.js";
 
 /* ---------- utilitaires ---------- */
@@ -46,6 +47,39 @@ function setSync(meta) {
 }
 
 /* ---------- démarrage ---------- */
+const getTheme = () => { try { return localStorage.getItem("voyage-theme") || "light"; } catch { return "light"; } };
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  const dark = t === "dark" || (t === "auto" && matchMedia("(prefers-color-scheme: dark)").matches);
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute("content", dark ? "#0F1A17" : "#EAF4EF"));
+}
+applyTheme(getTheme());
+
+/* ---------- prononciation (voix de l'iPhone, marche hors ligne) ---------- */
+const LANG_OF_GROUP = { Mandarin: "zh-CN", Cantonais: "zh-HK", Vietnamien: "vi-VN", Khmer: "km-KH", Malais: "ms-MY" };
+const LANG_OF_COUNTRY = { hk: "zh-HK", cn: "zh-CN", vn: "vi-VN", kh: "km-KH", my: "ms-MY" };
+const voiceFor = (lang) => {
+  const vs = (window.speechSynthesis?.getVoices() || []).map((v) => ({ v, l: v.lang.replace("_", "-").toLowerCase() }));
+  const L = lang.toLowerCase();
+  return (vs.find((x) => x.l === L) || vs.find((x) => x.l.startsWith(L.slice(0, 2))))?.v || null;
+};
+if (window.speechSynthesis) { speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => {}; }
+function speak(text, lang, btn) {
+  if (!window.speechSynthesis) return noVoice(btn, lang);
+  const v = voiceFor(lang);
+  if (!v && lang !== "zh-CN" && lang !== "vi-VN") return noVoice(btn, lang);
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text.replace(/\s*\/\s*/g, ", "));
+  u.lang = lang; if (v) u.voice = v; u.rate = 0.8;
+  btn?.classList.add("playing"); u.onend = u.onerror = () => btn?.classList.remove("playing");
+  speechSynthesis.speak(u);
+}
+function noVoice(btn, lang) {
+  const msg = `Pas de voix ${({ "zh-CN": "chinoise", "zh-HK": "cantonaise", "vi-VN": "vietnamienne", "km-KH": "khmère", "ms-MY": "malaise" })[lang] || ""} sur cet appareil. Sur iPhone : Réglages › Accessibilité › Contenu énoncé › Voix, pour en télécharger une.`;
+  if (btn) { btn.title = msg; } const t = document.createElement("div"); t.className = "toast"; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 5000);
+}
+const playBtn = (text, lang) => `<button type="button" class="play" data-say="${esc(text)}" data-lang="${esc(lang)}" aria-label="Écouter"><svg viewBox="0 0 24 24">${TOOL_ICONS.play}</svg></button>`;
+
 async function boot() {
   await initStore();
   window.addEventListener("online", () => setSync()); window.addEventListener("offline", () => setSync());
@@ -144,6 +178,7 @@ function stageBlock(st, iso) {
   const c = COUNTRIES[st.c];
   const hotels = hotelsFor(st);
   return `<section class="card stage" style="--c:${c.color}">
+    <span class="motif">${MOTIFS[st.c] || ""}</span>
     <p class="kicker">${esc(c.name)}</p>
     <h2>${esc(st.name)}</h2>
     <p class="muted">${esc(fmt(st.from))} → ${esc(fmt(st.to))} · ${daysBetween(st.from, st.to)} ${daysBetween(st.from, st.to) > 1 ? "nuits" : "nuit"}</p>
@@ -157,8 +192,10 @@ function stageBlock(st, iso) {
 
 function dayBlock(iso) {
   const d = dayRow(iso); if (!d) return "";
-  return `<section class="card day">
-    <p class="kicker">${esc(fmtLong(iso))}</p>
+  const st0 = stageById[d[1]] || stageOn(iso); const c0 = COUNTRIES[st0?.c || "fr"];
+  const n = DAYS.findIndex((x) => x[0] === iso) + 1;
+  return `<section class="card day" style="--c:${c0.color}">
+    <p class="kicker">${esc(fmtLong(iso))} · jour ${n} sur ${DAYS.length}</p>
     ${d[2] ? `<p class="trajet">${icon("train", "sm")} ${esc(d[2])}</p>` : ""}
     ${d[3] ? `<p>${esc(d[3])}</p>` : ""}
     <p class="muted">Nuit : ${esc(d[4])}</p>
@@ -173,17 +210,17 @@ function viewToday() {
     const done = S.resas.length - todo.length;
     const checksDone = CHECKLIST.filter((_, i) => S.checks.some((c) => c.id === "c" + i && c.done)).length;
     return `
-    <section class="hero"><p class="kicker">Départ le dimanche 27 juin 2027</p><p class="big">J−${left}</p>
+    <section class="hero deco">${landscape("h1")}<div class="hero-in"><p class="kicker">Départ le dimanche 27 juin 2027</p><p class="big">J−${left}</p>
       <div class="bars">
         <div><span>Réservations</span><b>${done}/${S.resas.length}</b><i style="--p:${S.resas.length ? done / S.resas.length : 0}"></i></div>
         <div><span>Préparatifs</span><b>${checksDone}/${CHECKLIST.length}</b><i style="--p:${checksDone / CHECKLIST.length}"></i></div>
-      </div></section>
+      </div></div></section>
     <h2 class="sect">Prochaines réservations à faire</h2>
     ${todo.slice(0, 6).map(resaCard).join("") || `<p class="muted pad">Tout est réservé.</p>`}
     <button class="link pad" data-go="resas">Voir toutes les réservations</button>
     ${isDemo() ? `<p class="note">Mode démo : les données restent sur cet appareil. La synchronisation entre vos deux téléphones s'active une fois Firebase configuré.</p>` : ""}`;
   }
-  if (t > TRIP.end) return `<section class="hero"><p class="big">Bon retour !</p><p class="muted">Le voyage est terminé. Tout reste consultable dans l'onglet Jours.</p></section>`;
+  if (t > TRIP.end) return `<section class="hero deco">${landscape("h3")}<div class="hero-in"><p class="big">Bon retour !</p><p class="muted">Le voyage est terminé. Tout reste consultable dans l'onglet Jours.</p></div></section>`;
   const tomorrow = isoOf(new Date(D(t).getTime() + 86400000));
   const st = stageOn(t) || stageById[dayRow(t)?.[1]];
   const today = resasOn(t), tom = resasOn(tomorrow);
@@ -368,16 +405,21 @@ function showList(st) {
   const items = [...(LOCAL_PLACES[st.id] || []).map(([fr, loc]) => ({ fr, loc })),
     ...hotelsFor(st).filter((r) => r.localAddr).map((r) => ({ fr: r.title, loc: r.localAddr }))];
   if (!items.length) return "";
+  const lang = LANG_OF_COUNTRY[st.c] || "";
   return `<h3>À montrer au chauffeur</h3><div class="showlist">${items.map((i) =>
-    `<button class="showitem" data-show-loc="${esc(i.loc)}" data-show-fr="${esc(i.fr)}"><span class="loc">${esc(i.loc)}</span><small>${esc(i.fr)}</small></button>`).join("")}</div>
+    `<div class="showrow"><button class="showitem" data-show-loc="${esc(i.loc)}" data-show-fr="${esc(i.fr)}" data-show-lang="${lang}"><span class="loc">${esc(i.loc)}</span><small>${esc(i.fr)}</small></button>${lang ? playBtn(i.loc, lang) : ""}</div>`).join("")}</div>
     <p class="muted small">Touchez pour afficher en grand. L'adresse de l'hôtel s'ajoute dans sa réservation.</p>`;
 }
-function bindShow(el) { el.querySelectorAll("[data-show-loc]").forEach((b) => (b.onclick = () => showBig(b.dataset.showLoc, b.dataset.showFr))); }
-function showBig(loc, fr) {
+function bindShow(el) {
+  el.querySelectorAll("[data-show-loc]").forEach((b) => (b.onclick = () => showBig(b.dataset.showLoc, b.dataset.showFr, b.dataset.showLang)));
+  el.querySelectorAll("[data-say]").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); speak(b.dataset.say, b.dataset.lang, b); }));
+}
+function showBig(loc, fr, lang) {
   if (!loc) return;
   const ov = document.createElement("div"); ov.className = "bigshow";
-  ov.innerHTML = `<p class="bigloc">${esc(loc)}</p><p class="bigfr">${esc(fr || "")}</p><button class="btn">Fermer</button>`;
-  ov.onclick = () => ov.remove(); document.body.appendChild(ov);
+  ov.innerHTML = `<p class="bigloc">${esc(loc)}</p><p class="bigfr">${esc(fr || "")}</p><div class="bigbtns">${lang ? `<button class="btn" data-bsay>Écouter</button>` : ""}<button class="btn" data-bx>Fermer</button></div>`;
+  ov.onclick = (e) => { if (e.target.closest("[data-bsay]")) speak(loc, lang, e.target.closest("[data-bsay]")); else { speechSynthesis?.cancel(); ov.remove(); } };
+  document.body.appendChild(ov);
 }
 
 /* ---------- Devises ---------- */
@@ -414,7 +456,7 @@ function viewMoney() {
   const byCountry = {}; ex.forEach((e) => { const c = e.country || countryOn(e.date); byCountry[c] = (byCountry[c] || 0) + (e.eur || 0); });
   const maxC = Math.max(1, ...Object.values(byCountry));
   let lastD = "";
-  return `<section class="hero money">
+  return `<section class="hero money coin">
       <p class="kicker">Dépensé sur place, à deux</p><p class="big">${money(total)}</p>
       <div class="bars"><div><span>Budget ${money(budget)}</span><b>${Math.round((total / budget) * 100)} %</b><i style="--p:${Math.min(1, total / budget)}"></i></div></div>
       <p class="owe">${owe}</p>
@@ -471,7 +513,7 @@ const TOOLS = [
   ["settings", "Réglages", "Prénoms, budget, compte"],
 ];
 function viewMore() {
-  if (!S.sub) return `<h2 class="sect">Outils</h2><div class="tools">${TOOLS.map(([k, t, d]) => `<button class="card tool" data-sub="${k}"><strong>${t}</strong><small>${d}</small></button>`).join("")}</div>`;
+  if (!S.sub) return `<h2 class="sect">Outils</h2><div class="tools">${TOOLS.map(([k, t, d]) => `<button class="card tool tool-${k}" data-sub="${k}"><span class="tico"><svg viewBox="0 0 24 24">${TOOL_ICONS[k]}</svg></span><strong>${t}</strong><small>${d}</small></button>`).join("")}</div>`;
   const back = `<button class="back" data-sub="">‹ Outils</button>`;
   return back + ({ conv: viewConv, phrases: viewPhrases, vault: viewVault, prep: viewPrep, settings: viewSettings })[S.sub]();
 }
@@ -487,8 +529,8 @@ function viewConv() {
 
 function viewPhrases() {
   return `<h2 class="sect">Phrases de survie</h2>${PHRASES.map((g) => `<details class="card phr" ${g.where === COUNTRIES[countryOn(todayIso())]?.name ? "open" : ""}><summary><strong>${esc(g.lang)}</strong> <small>${esc(g.where)}</small></summary>
-    ${g.rows.map(([fr, loc, ph]) => `<button class="phrase" data-show-loc="${esc(loc)}" data-show-fr="${esc(fr + " · " + ph)}"><span>${esc(fr)}</span><span class="loc">${esc(loc)}</span><small>${esc(ph)}</small></button>`).join("")}</details>`).join("")}
-    <p class="muted small pad">Touchez une phrase pour l'afficher en grand. Prononciations simplifiées.</p>`;
+    ${g.rows.map(([fr, loc, ph]) => `<div class="phrow"><button class="phrase" data-show-loc="${esc(loc)}" data-show-fr="${esc(fr + " · " + ph)}" data-show-lang="${LANG_OF_GROUP[g.lang]}"><span>${esc(fr)}</span><span class="loc">${esc(loc)}</span><small>${esc(ph)}</small></button>${playBtn(loc, LANG_OF_GROUP[g.lang])}</div>`).join("")}</details>`).join("")}
+    <p class="muted small pad">Le bouton haut-parleur fait parler la voix de l'iPhone, même sans réseau. Touchez une phrase pour l'afficher en grand.</p>`;
 }
 
 function viewVault() {
@@ -528,6 +570,7 @@ function viewSettings() {
     <div class="two"><label>Prénom 1<input name="p1" value="${esc(S.settings.people?.p1 || "")}" placeholder="Personne 1"></label>
       <label>Prénom 2<input name="p2" value="${esc(S.settings.people?.p2 || "")}" placeholder="Personne 2"></label></div>
     <label>Sur ce téléphone, je suis<select name="me"><option value="p1" ${me() === "p1" ? "selected" : ""}>${esc(P.p1)}</option><option value="p2" ${me() === "p2" ? "selected" : ""}>${esc(P.p2)}</option></select></label>
+    <label>Apparence (sur ce téléphone)<select name="theme"><option value="light" ${getTheme() === "light" ? "selected" : ""}>Clair</option><option value="dark" ${getTheme() === "dark" ? "selected" : ""}>Sombre</option><option value="auto" ${getTheme() === "auto" ? "selected" : ""}>Comme l'iPhone</option></select></label>
     <label>Budget sur place pour deux (€)<input name="budget" inputmode="numeric" value="${esc(budget)}"></label>
     <button class="btn primary">Enregistrer</button></form>
     <div class="card"><p class="muted small">Connecté : ${esc(S.user?.email || "")}</p>${isDemo() ? "" : `<button class="btn danger sm" id="logout">Se déconnecter</button>`}</div>`;
@@ -546,7 +589,8 @@ function bindExtras(v) {
   const sf = $("#sf", v);
   if (sf) sf.onsubmit = (e) => { e.preventDefault(); const f = sf.elements;
     store().put("settings", "people", { p1: f.p1.value.trim(), p2: f.p2.value.trim() });
-    store().put("settings", "budget", { total: Number(f.budget.value) || 10000 }); setMe(f.me.value); };
+    store().put("settings", "budget", { total: Number(f.budget.value) || 10000 }); setMe(f.me.value);
+    try { localStorage.setItem("voyage-theme", f.theme.value); } catch {} applyTheme(f.theme.value); render(); };
   const lo = $("#logout", v); if (lo) lo.onclick = () => confirmIn(lo, () => store().signOut());
 }
 
