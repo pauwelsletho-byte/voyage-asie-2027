@@ -281,6 +281,10 @@ function wxLine(st) {
   return "";
 }
 const wxIcon = (c) => (c.wet < 20 ? "☀️" : c.wet < 45 ? "🌤️" : "🌦️");
+function viewMeteo() {
+  const t = todayIso(), now = t >= TRIP.start && t <= TRIP.end ? wxCard(t) : "";
+  return `${now ? `<h2 class="sect">Prochains jours</h2>${now}` : ""}${climateCard()}`;
+}
 function climateCard() {
   const c = climate();
   const rows = MAP_STAGES.filter((st) => c[st.id === "kl1" ? "kl2" : st.id]);
@@ -387,7 +391,6 @@ function viewToday() {
         <div><span>Préparatifs</span><b>${checksDone}/${CHECKLIST.length}</b><i style="--p:${checksDone / CHECKLIST.length}"></i></div>
       </div></div></section>
     ${tripMap(t)}
-    ${climateCard()}
     <h2 class="sect">Prochaines réservations à faire</h2>
     ${todo.slice(0, 6).map(resaCard).join("") || `<p class="muted pad">Tout est réservé.</p>`}
     <button class="link pad" data-go="resas">Voir toutes les réservations</button>
@@ -804,6 +807,7 @@ const TOOLS = [
   ["conv", "Convertisseur", "Devises hors ligne"],
   ["phrases", "Phrases de survie", "Chinois, vietnamien, khmer, malais"],
   ["food", "Spécialités à goûter", "À cocher étape par étape"],
+  ["meteo", "Météo", "Le temps qui vous attend"],
   ["remind", "Rappels", "Dans le calendrier de l'iPhone"],
   ["tips", "Bons réflexes", "Pourboires, prix, pièges"],
   ["stats", "Stats du voyage", "Kilomètres, trains, plats"],
@@ -814,7 +818,7 @@ const TOOLS = [
 function viewMore() {
   if (!S.sub) return `<h2 class="sect">Outils</h2><div class="tools">${TOOLS.map(([k, t, d]) => `<button class="card tool tool-${k}" data-sub="${k}"><span class="tico"><svg viewBox="0 0 24 24">${TOOL_ICONS[k]}</svg></span><strong>${t}</strong><small>${d}</small></button>`).join("")}</div>`;
   const back = `<button class="back" data-sub="">‹ Outils</button>`;
-  return back + ({ conv: viewConv, phrases: viewPhrases, food: viewFood, journal: viewJournal, remind: viewRemind, tips: viewTips, stats: viewStats, vault: viewVault, prep: viewPrep, settings: viewSettings })[S.sub]();
+  return back + ({ conv: viewConv, phrases: viewPhrases, food: viewFood, meteo: viewMeteo, journal: viewJournal, remind: viewRemind, tips: viewTips, stats: viewStats, vault: viewVault, prep: viewPrep, settings: viewSettings })[S.sub]();
 }
 
 function viewConv() {

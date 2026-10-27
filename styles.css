@@ -343,3 +343,4 @@ input::-webkit-date-and-time-value { text-align: left; margin: 0; }
 .paste { margin-bottom: 10px; font-size: 14px; }
 .okmsg { background: color-mix(in srgb, var(--accent) 14%, var(--card)); color: var(--ink); border-radius: 12px; padding: 10px 12px; font-size: 14px; margin: 8px 0; }
 input.filled, textarea.filled { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--soft)); }
+.tool-meteo { --tc: #2B8597; }
