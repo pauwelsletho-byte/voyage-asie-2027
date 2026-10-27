@@ -57,6 +57,7 @@ async function firebaseStore() {
       } catch { return false; } // hors ligne : on réessaiera plus tard
       const b = writeBatch(db);
       seed.resas.forEach((r) => b.set(doc(db, ...base, "resas", r.id), r));
+      (seed.vault || []).forEach((v) => b.set(doc(db, ...base, "vault", v.id), v));
       b.set(doc(db, ...base, "meta", "seed"), { at: serverTimestamp() });
       await b.commit();
       return true;
@@ -111,9 +112,10 @@ function demoStore() {
     async put(name, id, data) { state[name] ||= {}; state[name][id] = { ...(state[name][id] || {}), ...data, updatedAt: Date.now() }; save(); emit(name); },
     async remove(name, id) { if (state[name]) delete state[name][id]; save(); emit(name); },
     async seedIfNeeded(seed) {
+      if (!state.meta?.seedVault && seed.vault) { state.vault ||= {}; seed.vault.forEach((v) => (state.vault[v.id] ||= v)); state.meta = { ...(state.meta || {}), seedVault: true }; save(); emit("vault"); }
       if (state.meta?.seed) return false;
       state.resas ||= {}; seed.resas.forEach((r) => (state.resas[r.id] = r));
-      state.meta = { seed: { at: Date.now() } }; save(); emit("resas"); return true;
+      state.meta = { ...(state.meta || {}), seed: { at: Date.now() } }; save(); emit("resas"); return true;
     },
     async saveFile(file) {
       const id = "f" + Date.now().toString(36);

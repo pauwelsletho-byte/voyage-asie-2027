@@ -1,5 +1,6 @@
 import { TRIP, COUNTRIES, STAGES, DAYS, SEED_RESAS, CHECKLIST } from "./data.js";
 import { initStore, store, isDemo } from "./store.js";
+import { CURRENCIES, CURRENCY_OF, CATEGORIES, PHRASES, LOCAL_PLACES, EMERGENCY, VAULT_SEED } from "./extras.js";
 
 /* ---------- utilitaires ---------- */
 const $ = (s, el = document) => el.querySelector(s);
@@ -30,7 +31,7 @@ const STATUS = { a_reserver: "À réserver", repere: "Repéré", reserve: "Rése
 const icon = (t, cls = "") => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[t] || ICONS.activite}</svg>`;
 
 /* ---------- état ---------- */
-const S = { user: null, resas: [], checks: [], files: [], tab: "today", filter: "todo", sync: { fromCache: true, pending: false }, unsubs: [] };
+const S = { user: null, resas: [], checks: [], files: [], expenses: [], vault: [], settings: {}, tab: "today", sub: null, filter: "todo", sync: { fromCache: true, pending: false }, unsubs: [] };
 
 function setSync(meta) {
   if (meta) S.sync = { ...S.sync, ...meta };
@@ -54,10 +55,13 @@ async function boot() {
 function startData() {
   S.unsubs.forEach((f) => f && f()); S.unsubs = [];
   renderShell();
-  const seed = { resas: SEED_RESAS.map((r, i) => ({ id: "seed-" + String(i).padStart(2, "0") + "-" + slug(r[1]), type: r[0], title: r[1], date: r[2], notes: r[3], status: r[4], price: r[5], files: [] })) };
+  const seed = { resas: SEED_RESAS.map((r, i) => ({ id: "seed-" + String(i).padStart(2, "0") + "-" + slug(r[1]), type: r[0], title: r[1], date: r[2], notes: r[3], status: r[4], price: r[5], files: [] })), vault: VAULT_SEED.map((v) => ({ ...v, files: [] })) };
   store().seedIfNeeded(seed).catch(() => {});
   S.unsubs.push(store().subscribe("resas", (items, m) => { if (items) S.resas = items; setSync(m); render(); }));
   S.unsubs.push(store().subscribe("checks", (items) => { if (items) S.checks = items; render(); }));
+  S.unsubs.push(store().subscribe("expenses", (items) => { if (items) S.expenses = items; render(); }));
+  S.unsubs.push(store().subscribe("vault", (items) => { if (items) S.vault = items; render(); }));
+  S.unsubs.push(store().subscribe("settings", (items) => { if (items) S.settings = Object.fromEntries(items.map((i) => [i.id, i])); render(); refreshRates(); }));
   S.unsubs.push(store().subscribe("files", (items) => {
     if (!items) return;
     const fresh = items.filter((f) => !S.files.some((g) => g.id === f.id));
@@ -100,20 +104,22 @@ function renderShell() {
     ${[["today", "Aujourd'hui", '<path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V9h14v11zM7 11h5v5H7z"/>'],
        ["days", "Jours", '<path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>'],
        ["resas", "Billets", ICONS.activite],
-       ["prep", "Préparatifs", '<path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/>']]
+       ["money", "Dépenses", '<path d="M21 7H5a1 1 0 0 1 0-2h14V3H5a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1zm-3 8a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>'],
+       ["more", "Outils", '<path d="M4 4h7v7H4zm9 0h7v7h-7zM4 13h7v7H4zm9 0h7v7h-7z"/>']]
       .map(([k, l, p]) => `<button data-tab="${k}"><svg viewBox="0 0 24 24">${p}</svg><span>${l}</span></button>`).join("")}
   </nav>
   <div id="sheet" class="sheet" hidden></div>`;
-  document.querySelectorAll(".tabs button").forEach((b) => (b.onclick = () => { S.tab = b.dataset.tab; window.scrollTo(0, 0); render(); }));
-  $("#fab").onclick = () => openResa(null);
+  document.querySelectorAll(".tabs button").forEach((b) => (b.onclick = () => { S.tab = b.dataset.tab; S.sub = null; window.scrollTo(0, 0); render(); }));
+  $("#fab").onclick = () => (S.tab === "money" ? openExpense(null) : openResa(null));
   setSync(); render();
 }
 
 function render() {
   const v = $("#view"); if (!v) return;
   document.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === S.tab));
-  $("#fab").hidden = S.tab !== "resas" && S.tab !== "today";
-  v.innerHTML = ({ today: viewToday, days: viewDays, resas: viewResas, prep: viewPrep })[S.tab]();
+  $("#fab").hidden = !["resas", "today", "money"].includes(S.tab);
+  $("#fab").setAttribute("aria-label", S.tab === "money" ? "Ajouter une dépense" : "Ajouter une réservation");
+  v.innerHTML = ({ today: viewToday, days: viewDays, resas: viewResas, money: viewMoney, more: viewMore })[S.tab]();
   bindView(v);
   setSync();
 }
@@ -144,6 +150,7 @@ function stageBlock(st, iso) {
     <h3>À faire</h3><ul>${st.todo.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
     <h3>Où dormir</h3><p>${esc(st.sleep)}</p>
     ${hotels.length ? hotels.map(resaCard).join("") : ""}
+    ${showList(st)}
     ${st.tip ? `<p class="tip">${esc(st.tip)}</p>` : ""}
   </section>`;
 }
@@ -229,6 +236,7 @@ function viewPrep() {
 function bindView(v) {
   v.querySelectorAll("[data-resa]").forEach((b) => (b.onclick = () => openResa(S.resas.find((r) => r.id === b.dataset.resa))));
   v.querySelectorAll("[data-day]").forEach((b) => (b.onclick = () => openDay(b.dataset.day)));
+  bindShow(v); bindExtras(v);
   v.querySelectorAll("[data-filter]").forEach((b) => (b.onclick = () => { S.filter = b.dataset.filter; render(); }));
   v.querySelectorAll("[data-go]").forEach((b) => (b.onclick = () => { S.tab = b.dataset.go; render(); }));
   v.querySelectorAll("[data-check]").forEach((c) => (c.onchange = () => store().put("checks", c.dataset.check, { done: c.checked, by: S.user?.email || "" })));
@@ -251,6 +259,7 @@ function openDay(iso) {
   const sh = openSheet(`<div class="sheet-head"><h2>${esc(fmtLong(iso))}</h2><button class="x" data-close aria-label="Fermer">✕</button></div>
     ${dayBlock(iso)}${resasOn(iso).map(resaCard).join("")}${stageBlock(st, iso)}`);
   sh.querySelectorAll("[data-resa]").forEach((b) => (b.onclick = () => openResa(S.resas.find((r) => r.id === b.dataset.resa))));
+  bindShow(sh);
 }
 
 function openResa(r) {
@@ -274,6 +283,8 @@ function openResa(r) {
         <label>Prix<input name="price" value="${esc(r.price || "")}"></label>
       </div>
       <label>Adresse ou lieu<input name="place" value="${esc(r.place || "")}"></label>
+      <label>Adresse en langue locale (à montrer au chauffeur)<textarea name="localAddr" rows="2" placeholder="Copiez ici l'adresse en chinois ou en vietnamien de la confirmation">${esc(r.localAddr || "")}</textarea></label>
+      ${r.localAddr ? `<button type="button" class="btn sm" id="showaddr">Afficher en grand</button>` : ""}
       <label>Notes<textarea name="notes" rows="3">${esc(r.notes || "")}</textarea></label>
       <div class="files"><h3>Billets et documents</h3><div id="fl"></div>
         <label class="btn addfile">Ajouter un billet (photo, capture, PDF)<input type="file" id="fi" accept="image/*,application/pdf" multiple hidden></label>
@@ -289,11 +300,10 @@ function openResa(r) {
       return `<div class="file"><button type="button" class="fopen" data-f="${esc(id)}">${esc(m?.name || "Fichier (en cours de synchronisation)")}</button>
         <small>${m ? Math.round(m.size / 1024) + " Ko" : ""}</small><button type="button" class="fdel" data-fd="${esc(id)}" aria-label="Retirer">✕</button></div>`; }).join("") || `<p class="muted small">Aucun fichier.</p>`;
     fl.querySelectorAll("[data-f]").forEach((b) => (b.onclick = () => viewFile(b.dataset.f)));
-    fl.querySelectorAll("[data-fd]").forEach((b) => (b.onclick = async () => {
-      if (!confirm("Retirer ce fichier ?")) return;
+    fl.querySelectorAll("[data-fd]").forEach((b) => (b.onclick = () => confirmIn(b, async () => {
       const id = b.dataset.fd; files = files.filter((x) => x !== id); drawFiles();
       await store().put("resas", r.id, { files }); store().deleteFile(id, S.files.find((f) => f.id === id)).catch(() => {});
-    }));
+    })));
   };
   drawFiles();
   $("#fi", sh).onchange = async (e) => {
@@ -305,17 +315,17 @@ function openResa(r) {
         const id = await store().saveFile(prepared);
         files.push(id); drawFiles();
         if (!isNew || $("#rf", sh).elements.title.value) await store().put("resas", r.id, { ...(isNew ? collect() : {}), files });
-      } catch (err) { alert("Impossible d'ajouter ce fichier : " + err.message); }
+      } catch (err) { fs.textContent = "Impossible d'ajouter ce fichier : " + err.message; continue; }
     }
-    fs.textContent = navigator.onLine ? "" : "Hors ligne : le fichier sera envoyé à l'autre téléphone au retour du réseau.";
+    if (!fs.textContent.startsWith("Impossible")) fs.textContent = navigator.onLine ? "" : "Hors ligne : le fichier sera envoyé à l'autre téléphone au retour du réseau.";
   };
-  const collect = () => { const f = $("#rf", sh).elements; return { type: f.type.value, title: f.title.value.trim(), status: f.status.value, date: f.date.value, time: f.time.value, ref: f.ref.value.trim(), price: f.price.value.trim(), place: f.place.value.trim(), notes: f.notes.value.trim() }; };
+  const collect = () => { const f = $("#rf", sh).elements; return { type: f.type.value, title: f.title.value.trim(), status: f.status.value, date: f.date.value, time: f.time.value, ref: f.ref.value.trim(), price: f.price.value.trim(), place: f.place.value.trim(), localAddr: f.localAddr.value.trim(), notes: f.notes.value.trim() }; };
+  const sa = $("#showaddr", sh); if (sa) sa.onclick = () => showBig($("#rf", sh).elements.localAddr.value, $("#rf", sh).elements.title.value);
   $("#rf", sh).onsubmit = async (e) => { e.preventDefault(); store().put("resas", r.id, { ...collect(), files, by: S.user?.email || "" }); closeSheet(); };
   const del = $("#del", sh);
-  if (del) del.onclick = async () => {
-    if (!confirm("Supprimer cette réservation et ses fichiers ?")) return;
+  if (del) del.onclick = () => confirmIn(del, () => {
     store().remove("resas", r.id); files.forEach((id) => store().deleteFile(id, S.files.find((f) => f.id === id)).catch(() => {})); closeSheet();
-  };
+  });
 }
 
 // Images : réduites et compressées pour rester légères ; PDF : tels quels (4 Mo max)
@@ -351,6 +361,193 @@ async function viewFile(id) {
     if (navigator.canShare?.({ files: [file] })) navigator.share({ files: [file] }).catch(() => {});
     else window.open(url, "_blank");
   };
+}
+
+/* ---------- À montrer au chauffeur ---------- */
+function showList(st) {
+  const items = [...(LOCAL_PLACES[st.id] || []).map(([fr, loc]) => ({ fr, loc })),
+    ...hotelsFor(st).filter((r) => r.localAddr).map((r) => ({ fr: r.title, loc: r.localAddr }))];
+  if (!items.length) return "";
+  return `<h3>À montrer au chauffeur</h3><div class="showlist">${items.map((i) =>
+    `<button class="showitem" data-show-loc="${esc(i.loc)}" data-show-fr="${esc(i.fr)}"><span class="loc">${esc(i.loc)}</span><small>${esc(i.fr)}</small></button>`).join("")}</div>
+    <p class="muted small">Touchez pour afficher en grand. L'adresse de l'hôtel s'ajoute dans sa réservation.</p>`;
+}
+function bindShow(el) { el.querySelectorAll("[data-show-loc]").forEach((b) => (b.onclick = () => showBig(b.dataset.showLoc, b.dataset.showFr))); }
+function showBig(loc, fr) {
+  if (!loc) return;
+  const ov = document.createElement("div"); ov.className = "bigshow";
+  ov.innerHTML = `<p class="bigloc">${esc(loc)}</p><p class="bigfr">${esc(fr || "")}</p><button class="btn">Fermer</button>`;
+  ov.onclick = () => ov.remove(); document.body.appendChild(ov);
+}
+
+/* ---------- Devises ---------- */
+let ratesBusy = false;
+const rates = () => { const r = S.settings.rates?.rates || {}; return Object.fromEntries(Object.entries(CURRENCIES).map(([k, c]) => [k, r[k] || c.rate])); };
+const toEur = (amount, cur) => amount / (rates()[cur] || 1);
+const money = (v, cur = "EUR") => { const c = CURRENCIES[cur] || CURRENCIES.EUR; return Number(v || 0).toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: c.dec }) + " " + c.sym; };
+async function refreshRates() {
+  const at = S.settings.rates?.at || 0;
+  if (ratesBusy || !navigator.onLine || Date.now() - at < 12 * 3600e3) return;
+  ratesBusy = true;
+  try {
+    const res = await fetch("https://open.er-api.com/v6/latest/EUR"); const j = await res.json();
+    if (j?.rates) await store().put("settings", "rates", { rates: Object.fromEntries(Object.keys(CURRENCIES).map((k) => [k, j.rates[k]]).filter(([, v]) => v)), at: Date.now() });
+  } catch {} finally { ratesBusy = false; }
+}
+const ratesNote = () => S.settings.rates?.at ? `Taux du ${new Date(S.settings.rates.at).toLocaleDateString("fr-FR")}, mis à jour automatiquement avec du réseau.` : "Taux approximatifs, mis à jour dès que l'app a du réseau.";
+
+/* ---------- Personnes ---------- */
+const people = () => ({ p1: S.settings.people?.p1 || "Personne 1", p2: S.settings.people?.p2 || "Personne 2" });
+const me = () => { try { return localStorage.getItem("voyage-me") || "p1"; } catch { return "p1"; } };
+const setMe = (v) => { try { localStorage.setItem("voyage-me", v); } catch {} };
+const countryOn = (iso) => (stageOn(iso) || stageById[dayRow(iso)?.[1]])?.c || "fr";
+
+/* ---------- Dépenses ---------- */
+function viewMoney() {
+  const P = people(); const budget = Number(S.settings.budget?.total || 10000);
+  const ex = [...S.expenses].sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.createdAt || 0) - (a.createdAt || 0));
+  const total = ex.reduce((t, e) => t + (e.eur || 0), 0);
+  const net = { p1: 0, p2: 0 };
+  ex.forEach((e) => { const v = e.eur || 0, payer = e.payer || "p1", other = payer === "p1" ? "p2" : "p1";
+    net[payer] += v; if (e.split === "payer") net[payer] -= v; else if (e.split === "other") net[other] -= v; else { net.p1 -= v / 2; net.p2 -= v / 2; } });
+  const owe = net.p1 > 0.5 ? `${esc(P.p2)} doit ${money(net.p1)} à ${esc(P.p1)}` : net.p2 > 0.5 ? `${esc(P.p1)} doit ${money(net.p2)} à ${esc(P.p2)}` : "Vous êtes quittes";
+  const byCountry = {}; ex.forEach((e) => { const c = e.country || countryOn(e.date); byCountry[c] = (byCountry[c] || 0) + (e.eur || 0); });
+  const maxC = Math.max(1, ...Object.values(byCountry));
+  let lastD = "";
+  return `<section class="hero money">
+      <p class="kicker">Dépensé sur place, à deux</p><p class="big">${money(total)}</p>
+      <div class="bars"><div><span>Budget ${money(budget)}</span><b>${Math.round((total / budget) * 100)} %</b><i style="--p:${Math.min(1, total / budget)}"></i></div></div>
+      <p class="owe">${owe}</p>
+    </section>
+    ${Object.keys(byCountry).length ? `<h2 class="sect">Par pays</h2><div class="card">${Object.entries(byCountry).sort((a, b) => b[1] - a[1]).map(([c, v]) =>
+      `<div class="cbar" style="--c:${COUNTRIES[c]?.color || "#888"}"><span>${esc(COUNTRIES[c]?.name || c)}</span><b>${money(v)}</b><i style="--p:${v / maxC}"></i></div>`).join("")}</div>` : ""}
+    ${ex.map((e) => { const h = e.date !== lastD ? `<h2 class="sect">${esc(fmtLong(e.date))}</h2>` : ""; lastD = e.date;
+      return h + `<button class="card exp" data-exp="${esc(e.id)}"><span class="emain"><strong>${esc(e.desc || CATEGORIES[e.cat] || "Dépense")}</strong>
+        <small>${esc(CATEGORIES[e.cat] || "")} · payé par ${esc(P[e.payer] || "")}${e.split === "payer" ? " (pour lui/elle)" : e.split === "other" ? " (pour l'autre)" : ""}</small></span>
+        <span class="eside"><b>${money(e.eur)}</b>${e.cur !== "EUR" ? `<small>${money(e.amount, e.cur)}</small>` : ""}</span></button>`; }).join("")
+      || `<p class="muted pad">Aucune dépense pour l'instant. Touchez + pour ajouter la première, dans n'importe quelle devise.</p>`}`;
+}
+
+function openExpense(e) {
+  const isNew = !e; const P = people();
+  const date = e?.date || (todayIso() < TRIP.start ? TRIP.start : todayIso());
+  e = e || { id: "e" + Date.now().toString(36), date, cur: CURRENCY_OF[countryOn(date)] || "EUR", payer: me(), split: "both", cat: "repas" };
+  const sh = openSheet(`<div class="sheet-head"><h2>${isNew ? "Nouvelle dépense" : "Dépense"}</h2><button class="x" data-close aria-label="Fermer">✕</button></div>
+    <form id="ef" class="form">
+      <div class="two"><label>Montant<input name="amount" inputmode="decimal" required value="${esc(e.amount ?? "")}" placeholder="0"></label>
+        <label>Devise<select name="cur">${Object.entries(CURRENCIES).map(([k, c]) => `<option value="${k}" ${e.cur === k ? "selected" : ""}>${k} · ${c.sym}</option>`).join("")}</select></label></div>
+      <p class="muted small" id="eurv"></p>
+      <label>Description<input name="desc" value="${esc(e.desc || "")}" placeholder="Ex. dîner, taxi, entrée du parc"></label>
+      <div class="two"><label>Catégorie<select name="cat">${Object.entries(CATEGORIES).map(([k, l]) => `<option value="${k}" ${e.cat === k ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+        <label>Date<input type="date" name="date" value="${esc(e.date)}"></label></div>
+      <div class="two"><label>Payé par<select name="payer"><option value="p1" ${e.payer === "p1" ? "selected" : ""}>${esc(P.p1)}</option><option value="p2" ${e.payer === "p2" ? "selected" : ""}>${esc(P.p2)}</option></select></label>
+        <label>Pour<select name="split"><option value="both" ${e.split === "both" ? "selected" : ""}>Les deux</option><option value="payer" ${e.split === "payer" ? "selected" : ""}>Celui qui paie</option><option value="other" ${e.split === "other" ? "selected" : ""}>L'autre</option></select></label></div>
+      <div class="actions">${isNew ? "" : `<button type="button" class="btn danger" id="edel">Supprimer</button>`}<button class="btn primary" type="submit">Enregistrer</button></div>
+    </form>`);
+  const f = $("#ef", sh).elements;
+  const num = () => parseFloat(String(f.amount.value).replace(/\s/g, "").replace(",", ".")) || 0;
+  const upd = () => { $("#eurv", sh).textContent = f.cur.value === "EUR" ? "" : "≈ " + money(toEur(num(), f.cur.value)); };
+  f.amount.oninput = upd; f.cur.onchange = upd; upd();
+  $("#ef", sh).onsubmit = (ev) => { ev.preventDefault(); const a = num(); if (!a) return;
+    setMe(f.payer.value);
+    store().put("expenses", e.id, { amount: a, cur: f.cur.value, eur: Math.round(toEur(a, f.cur.value) * 100) / 100, desc: f.desc.value.trim(), cat: f.cat.value, date: f.date.value, payer: f.payer.value, split: f.split.value, country: countryOn(f.date.value), createdAt: e.createdAt || Date.now() });
+    closeSheet(); };
+  const d = $("#edel", sh); if (d) d.onclick = () => confirmIn(d, () => { store().remove("expenses", e.id); closeSheet(); });
+}
+
+// Confirmation dans le bouton (deuxième appui)
+function confirmIn(btn, action) {
+  if (btn.dataset.armed) return action();
+  btn.dataset.armed = "1"; const old = btn.textContent; btn.textContent = "Confirmer ?";
+  setTimeout(() => { if (btn.isConnected) { delete btn.dataset.armed; btn.textContent = old; } }, 3000);
+}
+
+/* ---------- Outils ---------- */
+const TOOLS = [
+  ["conv", "Convertisseur", "Devises hors ligne"],
+  ["phrases", "Phrases de survie", "Chinois, vietnamien, khmer, malais"],
+  ["vault", "Documents et urgences", "Passeports, assurance, numéros"],
+  ["prep", "Préparatifs", "Checklist avant le départ et sac"],
+  ["settings", "Réglages", "Prénoms, budget, compte"],
+];
+function viewMore() {
+  if (!S.sub) return `<h2 class="sect">Outils</h2><div class="tools">${TOOLS.map(([k, t, d]) => `<button class="card tool" data-sub="${k}"><strong>${t}</strong><small>${d}</small></button>`).join("")}</div>`;
+  const back = `<button class="back" data-sub="">‹ Outils</button>`;
+  return back + ({ conv: viewConv, phrases: viewPhrases, vault: viewVault, prep: viewPrep, settings: viewSettings })[S.sub]();
+}
+
+function viewConv() {
+  const amt = S.convAmt ?? 100, cur = S.convCur || CURRENCY_OF[countryOn(todayIso())] || "CNY";
+  const eur = toEur(amt, cur);
+  return `<h2 class="sect">Convertisseur</h2><div class="card conv">
+    <div class="two"><input id="ca" inputmode="decimal" value="${esc(amt)}" aria-label="Montant"><select id="cc" aria-label="Devise">${Object.entries(CURRENCIES).map(([k, c]) => `<option value="${k}" ${k === cur ? "selected" : ""}>${k} · ${esc(c.name)}</option>`).join("")}</select></div>
+    <div class="convlist">${Object.entries(CURRENCIES).filter(([k]) => k !== cur).map(([k]) => `<div><span>${k}</span><b>${money(eur * rates()[k], k)}</b></div>`).join("")}</div>
+    <p class="muted small">${ratesNote()}</p></div>`;
+}
+
+function viewPhrases() {
+  return `<h2 class="sect">Phrases de survie</h2>${PHRASES.map((g) => `<details class="card phr" ${g.where === COUNTRIES[countryOn(todayIso())]?.name ? "open" : ""}><summary><strong>${esc(g.lang)}</strong> <small>${esc(g.where)}</small></summary>
+    ${g.rows.map(([fr, loc, ph]) => `<button class="phrase" data-show-loc="${esc(loc)}" data-show-fr="${esc(fr + " · " + ph)}"><span>${esc(fr)}</span><span class="loc">${esc(loc)}</span><small>${esc(ph)}</small></button>`).join("")}</details>`).join("")}
+    <p class="muted small pad">Touchez une phrase pour l'afficher en grand. Prononciations simplifiées.</p>`;
+}
+
+function viewVault() {
+  const items = [...S.vault].sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+  return `<h2 class="sect">Numéros d'urgence</h2><div class="card list">${EMERGENCY.map(([c, n]) => `<div class="kv"><span>${esc(c)}</span><b>${esc(n)}</b></div>`).join("")}</div>
+    <h2 class="sect">Documents</h2>${items.map((v) => `<button class="card resa" data-vault="${esc(v.id)}"><span class="rico t-admin">${icon("admin")}</span>
+      <span class="rmain"><strong>${esc(v.title)}</strong><small>${esc((v.text || "").split("\n")[0])}</small></span>
+      <span class="rside">${(v.files || []).length ? `<span class="clip">${v.files.length} fichier${v.files.length > 1 ? "s" : ""}</span>` : ""}</span></button>`).join("")}
+    <button class="btn wide" data-newvault>Ajouter un document</button>`;
+}
+
+function openVault(v) {
+  const isNew = !v; v = v || { id: "v" + Date.now().toString(36), title: "", text: "", files: [] };
+  let files = [...(v.files || [])];
+  const sh = openSheet(`<div class="sheet-head"><h2>${isNew ? "Nouveau document" : "Document"}</h2><button class="x" data-close aria-label="Fermer">✕</button></div>
+    <form id="vf" class="form"><label>Titre<input name="title" required value="${esc(v.title)}"></label>
+      <label>Notes (numéros, contacts…)<textarea name="text" rows="5">${esc(v.text || "")}</textarea></label>
+      <div class="files"><h3>Fichiers</h3><div id="vfl"></div>
+        <label class="btn addfile">Ajouter une photo ou un PDF<input type="file" id="vfi" accept="image/*,application/pdf" multiple hidden></label></div>
+      <div class="actions">${isNew ? "" : `<button type="button" class="btn danger" id="vdel">Supprimer</button>`}<button class="btn primary" type="submit">Enregistrer</button></div></form>`);
+  const fl = $("#vfl", sh);
+  const draw = () => { fl.innerHTML = files.map((id) => { const m = S.files.find((f) => f.id === id);
+      return `<div class="file"><button type="button" class="fopen" data-f="${esc(id)}">${esc(m?.name || "Fichier (synchronisation…)")}</button><small>${m ? Math.round(m.size / 1024) + " Ko" : ""}</small><button type="button" class="fdel" data-fd="${esc(id)}" aria-label="Retirer">✕</button></div>`; }).join("") || `<p class="muted small">Aucun fichier.</p>`;
+    fl.querySelectorAll("[data-f]").forEach((b) => (b.onclick = () => viewFile(b.dataset.f)));
+    fl.querySelectorAll("[data-fd]").forEach((b) => (b.onclick = () => confirmIn(b, async () => { const id = b.dataset.fd; files = files.filter((x) => x !== id); draw(); await store().put("vault", v.id, { files }); store().deleteFile(id, S.files.find((f) => f.id === id)).catch(() => {}); }))); };
+  draw();
+  const collect = () => { const f = $("#vf", sh).elements; return { title: f.title.value.trim() || "Document", text: f.text.value }; };
+  $("#vfi", sh).onchange = async (ev) => { const list = [...ev.target.files]; ev.target.value = "";
+    for (const f of list) { try { const id = await store().saveFile(await prepareFile(f)); files.push(id); draw(); await store().put("vault", v.id, { ...collect(), files }); } catch (err) { fl.insertAdjacentHTML("beforeend", `<p class="err">${esc(err.message)}</p>`); } } };
+  $("#vf", sh).onsubmit = (ev) => { ev.preventDefault(); store().put("vault", v.id, { ...collect(), files }); closeSheet(); };
+  const d = $("#vdel", sh); if (d) d.onclick = () => confirmIn(d, () => { store().remove("vault", v.id); files.forEach((id) => store().deleteFile(id, S.files.find((f) => f.id === id)).catch(() => {})); closeSheet(); });
+}
+
+function viewSettings() {
+  const P = people(); const budget = S.settings.budget?.total || 10000;
+  return `<h2 class="sect">Réglages</h2><form class="card form" id="sf">
+    <div class="two"><label>Prénom 1<input name="p1" value="${esc(S.settings.people?.p1 || "")}" placeholder="Personne 1"></label>
+      <label>Prénom 2<input name="p2" value="${esc(S.settings.people?.p2 || "")}" placeholder="Personne 2"></label></div>
+    <label>Sur ce téléphone, je suis<select name="me"><option value="p1" ${me() === "p1" ? "selected" : ""}>${esc(P.p1)}</option><option value="p2" ${me() === "p2" ? "selected" : ""}>${esc(P.p2)}</option></select></label>
+    <label>Budget sur place pour deux (€)<input name="budget" inputmode="numeric" value="${esc(budget)}"></label>
+    <button class="btn primary">Enregistrer</button></form>
+    <div class="card"><p class="muted small">Connecté : ${esc(S.user?.email || "")}</p>${isDemo() ? "" : `<button class="btn danger sm" id="logout">Se déconnecter</button>`}</div>`;
+}
+
+function bindExtras(v) {
+  v.querySelectorAll("[data-sub]").forEach((b) => (b.onclick = () => { S.sub = b.dataset.sub || null; window.scrollTo(0, 0); render(); }));
+  v.querySelectorAll("[data-exp]").forEach((b) => (b.onclick = () => openExpense(S.expenses.find((e) => e.id === b.dataset.exp))));
+  v.querySelectorAll("[data-vault]").forEach((b) => (b.onclick = () => openVault(S.vault.find((x) => x.id === b.dataset.vault))));
+  const nv = v.querySelector("[data-newvault]"); if (nv) nv.onclick = () => openVault(null);
+  const ca = $("#ca", v), cc = $("#cc", v);
+  if (ca) { const upd = () => { S.convAmt = parseFloat(ca.value.replace(",", ".")) || 0; S.convCur = cc.value;
+      const eur = toEur(S.convAmt, S.convCur);
+      v.querySelector(".convlist").innerHTML = Object.keys(CURRENCIES).filter((k) => k !== S.convCur).map((k) => `<div><span>${k}</span><b>${money(eur * rates()[k], k)}</b></div>`).join(""); };
+    ca.oninput = upd; cc.onchange = upd; }
+  const sf = $("#sf", v);
+  if (sf) sf.onsubmit = (e) => { e.preventDefault(); const f = sf.elements;
+    store().put("settings", "people", { p1: f.p1.value.trim(), p2: f.p2.value.trim() });
+    store().put("settings", "budget", { total: Number(f.budget.value) || 10000 }); setMe(f.me.value); };
+  const lo = $("#logout", v); if (lo) lo.onclick = () => confirmIn(lo, () => store().signOut());
 }
 
 boot();
