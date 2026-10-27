@@ -340,3 +340,4 @@ a.btn.primary { color: #fff; }
 input, select, textarea { min-width: 0; max-width: 100%; box-sizing: border-box; }
 input[type="date"], input[type="time"] { -webkit-appearance: none; appearance: none; display: block; min-height: 46px; line-height: 22px; }
 input::-webkit-date-and-time-value { text-align: left; margin: 0; }
+.paste { margin-bottom: 10px; font-size: 14px; }

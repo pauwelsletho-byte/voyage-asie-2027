@@ -425,7 +425,7 @@ function viewResas() {
   const list = S.resas.filter((r) => S.filter === "all" || (S.filter === "todo" ? r.status !== "reserve" : r.status === "reserve")).sort(S.filter === "todo" ? byBooking : byDate);
   let lastM = "";
   const counts = { todo: S.resas.filter((r) => r.status !== "reserve").length, done: S.resas.filter((r) => r.status === "reserve").length };
-  return `<div class="chips">
+  return `<button class="btn wide paste" data-paste>📋 Coller une réservation préparée par Claude</button><div class="chips">
     ${[["todo", `À faire (${counts.todo})`], ["done", `Réservé (${counts.done})`], ["all", "Tout"]].map(([k, l]) => `<button class="chip ${S.filter === k ? "on" : ""}" data-filter="${k}">${l}</button>`).join("")}
   </div>` + (list.map((r) => {
     const m = S.filter === "todo" ? "À réserver : " + bookingPeriod(bookingFor(r)?.from || (r.date < TRIP.start ? r.date : "2027-06-27"))
@@ -433,6 +433,36 @@ function viewResas() {
     const h = m !== lastM ? `<h2 class="sect">${esc(m)}</h2>` : ""; lastM = m;
     return h + resaCard(r);
   }).join("") || `<p class="muted pad">Rien ici.</p>`);
+}
+
+// Import d'une réservation préparée (texte JSON copié depuis la conversation avec Claude)
+function openPaste() {
+  const sh = openSheet(`<div class="sheet-head"><h2>Coller une réservation</h2><button class="x" data-close aria-label="Fermer">✕</button></div>
+    <p class="muted small">Copiez le bloc de texte que Claude vous a donné (il commence par une accolade) et collez-le ici.</p>
+    <textarea id="pt" rows="6" placeholder='{"match": "…", "status": "reserve", …}'></textarea>
+    <p class="err" id="pe"></p><div id="pv"></div>
+    <div class="actions"><button class="btn" id="pr">Lire</button><button class="btn primary" id="ps" disabled>Enregistrer</button></div>`);
+  let items = [];
+  const LBL = { title: "Titre", type: "Type", status: "Statut", date: "Date", time: "Heure", ref: "N° de réservation", paid: "Montant payé (€)", paidBy: "Payé par", price: "Prix estimé", place: "Adresse", localAddr: "Adresse locale", notes: "Notes" };
+  $("#pr", sh).onclick = () => {
+    $("#pe", sh).textContent = ""; $("#ps", sh).disabled = true;
+    try {
+      let raw = $("#pt", sh).value.trim().replace(/^```\w*|```$/g, "").trim().replace(/[“”]/g, '"');
+      const data = JSON.parse(raw); items = (Array.isArray(data) ? data : [data]).map((d) => {
+        const target = d.match ? S.resas.find((r) => r.title === d.match) || S.resas.find((r) => r.title.toLowerCase().includes(String(d.match).toLowerCase())) : null;
+        const { match, ...fields } = d; if (fields.paidBy && !["p1", "p2"].includes(fields.paidBy)) delete fields.paidBy;
+        return { target, fields };
+      });
+      $("#pv", sh).innerHTML = items.map(({ target, fields }) => `<div class="card"><p class="kicker">${target ? "Mise à jour de" : "Nouvelle réservation"}</p><h3>${esc(target?.title || fields.title || "Sans titre")}</h3>
+        ${Object.entries(fields).map(([k, v]) => `<div class="kv"><span>${esc(LBL[k] || k)}</span><b>${esc(k === "status" ? STATUS[v] || v : k === "type" ? TYPES[v] || v : v)}</b></div>`).join("")}</div>`).join("");
+      $("#ps", sh).disabled = false;
+    } catch { $("#pe", sh).textContent = "Je n'arrive pas à lire ce texte : vérifiez qu'il est copié en entier, de { à }."; }
+  };
+  $("#ps", sh).onclick = () => {
+    items.forEach(({ target, fields }) => { const id = target?.id || "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+      store().put("resas", id, { ...(target ? {} : { type: "hotel", status: "reserve", files: [] }), ...fields, by: S.user?.email || "" }); });
+    closeSheet();
+  };
 }
 
 function viewPrep() {
@@ -449,6 +479,7 @@ function bindView(v) {
   v.querySelectorAll("[data-resa]").forEach((b) => (b.onclick = () => openResa(S.resas.find((r) => r.id === b.dataset.resa))));
   v.querySelectorAll("[data-day]").forEach((b) => (b.onclick = () => openDay(b.dataset.day)));
   v.querySelectorAll("[data-wxretry]").forEach((b) => (b.onclick = () => { b.textContent = "Chargement…"; ensureWeather(true); }));
+  v.querySelectorAll("[data-paste]").forEach((b) => (b.onclick = openPaste));
   v.querySelectorAll("[data-journal]").forEach((b) => (b.onclick = () => openJournal(b.dataset.journal)));
   hydrateThumbs(v);
   v.querySelectorAll("[data-food]").forEach((c) => (c.onchange = () => store().put("food", c.dataset.food, { done: c.checked, by: S.user?.email || "" })));
