@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Seuls vos deux comptes peuvent lire et écrire les données du voyage
+    function allowed() {
+      return request.auth != null
+        && request.auth.token.email in ['pauwels.letho@gmail.com', 'EMAIL_DE_VOTRE_COPINE'];
+    }
+    match /trips/{trip}/{document=**} {
+      allow read, write: if allowed();
+    }
+  }
+}

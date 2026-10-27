@@ -1,0 +1,8 @@
+import { build } from "esbuild";
+import { cpSync, readFileSync, writeFileSync, mkdirSync, rmSync } from "fs";
+rmSync("dist", { recursive: true, force: true }); mkdirSync("dist", { recursive: true });
+cpSync("public", "dist", { recursive: true });
+await build({ entryPoints: ["src/app.js"], bundle: true, format: "esm", minify: true, target: ["safari15"], outfile: "dist/app.js", legalComments: "none" });
+const v = Date.now().toString(36);
+writeFileSync("dist/sw.js", readFileSync("dist/sw.js", "utf8").replace("__VERSION__", v));
+console.log("build", v);
