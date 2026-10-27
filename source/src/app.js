@@ -948,7 +948,7 @@ function viewSettings() {
     <label>Apparence (sur ce téléphone)<select name="theme"><option value="light" ${getTheme() === "light" ? "selected" : ""}>Clair</option><option value="dark" ${getTheme() === "dark" ? "selected" : ""}>Sombre</option><option value="auto" ${getTheme() === "auto" ? "selected" : ""}>Comme l'iPhone</option></select></label>
     <label>Budget total du voyage pour deux, vols et logements compris (€)<input name="budget" inputmode="numeric" value="${esc(budget)}"></label>
     <button class="btn primary">Enregistrer</button></form>
-    <div class="card"><p class="muted small">Connecté : ${esc(S.user?.email || "")}</p>${isDemo() ? "" : `<button class="btn danger sm" id="logout">Se déconnecter</button>`}</div>`;
+    <div class="card"><p class="muted small">Connecté : ${esc(S.user?.email || "")} · version ${typeof __BUILD__ !== "undefined" ? __BUILD__ : "dev"}</p>${isDemo() ? "" : `<button class="btn danger sm" id="logout">Se déconnecter</button>`}</div>`;
 }
 
 function bindExtras(v) {
@@ -970,4 +970,11 @@ function bindExtras(v) {
 }
 
 boot();
-if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("./sw.js").catch(() => {});
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  const hadCtrl = !!navigator.serviceWorker.controller; let reloaded = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (hadCtrl && !reloaded) { reloaded = true; location.reload(); } });
+  navigator.serviceWorker.register("./sw.js").then((reg) => {
+    reg.update().catch(() => {});
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") reg.update().catch(() => {}); });
+  }).catch(() => {});
+}
