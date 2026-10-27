@@ -1,6 +1,6 @@
 // Garde l'app sur le téléphone pour qu'elle s'ouvre sans réseau.
 // Avec du réseau : toujours la dernière version (réseau d'abord) ; sans réseau : la copie gardée.
-const VERSION = "mvquje1h";
+const VERSION = "mvqulgm9";
 const CACHE = "asie2027-" + VERSION;
 const SHELL = ["./", "./index.html", "./app.js", "./styles.css", "./manifest.webmanifest", "./icons/icon-180.png", "./icons/icon-192.png", "./icons/icon-512.png"];
 

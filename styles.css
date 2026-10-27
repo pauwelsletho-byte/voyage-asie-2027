@@ -334,3 +334,9 @@ a.btn.primary { color: #fff; }
 .clim b { font-size: 14px; padding-left: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .clim small { font-size: 12px; padding-left: 9px; }
 .clim small { white-space: nowrap; }
+/* champs date/heure sur iPhone : ne débordent plus */
+.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.form label, .two > * { min-width: 0; }
+input, select, textarea { min-width: 0; max-width: 100%; box-sizing: border-box; }
+input[type="date"], input[type="time"] { -webkit-appearance: none; appearance: none; display: block; min-height: 46px; line-height: 22px; }
+input::-webkit-date-and-time-value { text-align: left; margin: 0; }
