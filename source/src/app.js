@@ -4,6 +4,7 @@ import { landscape, MOTIFS, TOOL_ICONS } from "./decor.js";
 import { FOODS, foodId, foodsForStage } from "./food.js";
 import { MAP_W, MAP_H, LAND, VISITED, PTS, LL } from "./mapdata.js";
 import { TIPS, APPS } from "./tips.js";
+import { pdfText, parseConfirmation } from "./pdfread.js";
 import { LEGS, legKm } from "./stats.js";
 import { WMO, cachedForecast, fetchForecast, fetchClimateAll, cachedClimate } from "./weather.js";
 import { bookingFor as bkByTitle, bookingPeriod } from "./booking.js";
@@ -544,7 +545,7 @@ function openResa(r) {
       <label>Notes<textarea name="notes" rows="3">${esc(r.notes || "")}</textarea></label>
       <div class="files"><h3>Billets et documents</h3><div id="fl"></div>
         <label class="btn addfile">Ajouter un billet (photo, capture, PDF)<input type="file" id="fi" accept="image/*,application/pdf" multiple hidden></label>
-        <p class="muted small" id="fs"></p></div>
+        <p class="muted small" id="fs"></p><div id="pdfmsg"></div></div>
       <div class="actions">
         ${isNew ? "" : `<button type="button" class="btn danger" id="del">Supprimer</button>`}
         <button class="btn primary" type="submit">Enregistrer</button>
@@ -570,11 +571,30 @@ function openResa(r) {
         const prepared = await prepareFile(f);
         const id = await store().saveFile(prepared);
         files.push(id); drawFiles();
+        if (f.type === "application/pdf") await fillFromPdf(f);
         if (!isNew || $("#rf", sh).elements.title.value) await store().put("resas", r.id, { ...(isNew ? collect() : {}), files });
       } catch (err) { fs.textContent = "Impossible d'ajouter ce fichier : " + err.message; continue; }
     }
     if (!fs.textContent.startsWith("Impossible")) fs.textContent = navigator.onLine ? "" : "Hors ligne : le fichier sera envoyé à l'autre téléphone au retour du réseau.";
   };
+  async function fillFromPdf(file) {
+    const box = $("#pdfmsg", sh);
+    try {
+      box.innerHTML = `<p class="muted small">Lecture du PDF…</p>`;
+      const got = parseConfirmation(await pdfText(file), { start: "2027-06-20", end: "2027-08-25", rates: rates() });
+      const f = $("#rf", sh).elements, done = [];
+      const set = (name, val, label, always) => { if (val == null || val === "") return; if (!always && f[name].value && f[name].value !== String(val)) return; f[name].value = val; f[name].classList.add("filled"); done.push(label); };
+      set("ref", got.ref, "n° " + got.ref);
+      set("date", got.date, "date " + (got.date ? fmt(got.date) : ""), true);
+      set("time", got.time, "heure " + got.time);
+      if (got.paid) set("paid", got.paid, "payé " + money(got.paid) + (got.paidCur !== "EUR" ? ` (${money(got.paidRaw, got.paidCur)})` : ""));
+      set("place", got.place, "adresse");
+      set("localAddr", got.localAddr, "adresse locale");
+      if (done.length && f.status.value !== "reserve") { f.status.value = "reserve"; done.push("statut Réservé"); }
+      box.innerHTML = done.length ? `<p class="okmsg">Rempli depuis le PDF : ${esc(done.join(" · "))}. Vérifiez puis touchez Enregistrer.</p>`
+        : `<p class="muted small">Je n'ai rien trouvé à remplir dans ce PDF. Envoyez-le à Claude dans la conversation si besoin.</p>`;
+    } catch (err) { box.innerHTML = `<p class="muted small">Lecture du PDF impossible (${esc(err.message)}).</p>`; }
+  }
   const collect = () => { const f = $("#rf", sh).elements; return { type: f.type.value, title: f.title.value.trim(), status: f.status.value, date: f.date.value, time: f.time.value, ref: f.ref.value.trim(), price: f.price.value.trim(), paid: parseFloat(String(f.paid.value).replace(",", ".").replace(/[^\d.]/g, "")) || null, paidBy: f.paidBy.value, place: f.place.value.trim(), localAddr: f.localAddr.value.trim(), notes: f.notes.value.trim() }; };
   const ga = $("#goaddr", sh); if (ga) ga.onclick = () => openGo(r.localAddr || r.place, r.title, (stageOn(r.date) || {}).id);
   const sa = $("#showaddr", sh); if (sa) sa.onclick = () => showBig($("#rf", sh).elements.localAddr.value, $("#rf", sh).elements.title.value);

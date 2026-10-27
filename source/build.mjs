@@ -2,6 +2,7 @@ import { build } from "esbuild";
 import { cpSync, readFileSync, writeFileSync, mkdirSync, rmSync } from "fs";
 rmSync("dist", { recursive: true, force: true }); mkdirSync("dist", { recursive: true });
 cpSync("public", "dist", { recursive: true });
+mkdirSync("dist/pdfjs"); cpSync("node_modules/pdfjs-dist/build/pdf.min.js", "dist/pdfjs/pdf.min.js"); cpSync("node_modules/pdfjs-dist/build/pdf.worker.min.js", "dist/pdfjs/pdf.worker.min.js");
 const v = Date.now().toString(36);
 await build({ define: { __BUILD__: JSON.stringify(v) }, entryPoints: ["src/app.js"], bundle: true, format: "esm", minify: true, target: ["safari15"], outfile: "dist/app.js", legalComments: "none" });
 writeFileSync("dist/sw.js", readFileSync("dist/sw.js", "utf8").replace("__VERSION__", v));

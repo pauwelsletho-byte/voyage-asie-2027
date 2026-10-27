@@ -2,7 +2,7 @@
 // Avec du réseau : toujours la dernière version (réseau d'abord) ; sans réseau : la copie gardée.
 const VERSION = "__VERSION__";
 const CACHE = "asie2027-" + VERSION;
-const SHELL = ["./", "./index.html", "./app.js", "./styles.css", "./manifest.webmanifest", "./icons/icon-180.png", "./icons/icon-192.png", "./icons/icon-512.png"];
+const SHELL = ["./", "./index.html", "./app.js", "./styles.css", "./manifest.webmanifest", "./icons/icon-180.png", "./icons/icon-192.png", "./icons/icon-512.png", "./pdfjs/pdf.min.js", "./pdfjs/pdf.worker.min.js"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => Promise.all(SHELL.map((u) => fetch(new Request(u, { cache: "reload" })).then((r) => r.ok && c.put(u === "./" ? "./index.html" : u, r))))).then(() => self.skipWaiting()));
