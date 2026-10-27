@@ -1,5 +1,5 @@
 // Garde l'app sur le téléphone pour qu'elle s'ouvre sans réseau
-const VERSION = "mvqqjnnx";
+const VERSION = "mvqrivr7";
 const CACHE = "asie2027-" + VERSION;
 const SHELL = ["./", "./index.html", "./app.js", "./styles.css", "./manifest.webmanifest", "./icons/icon-180.png", "./icons/icon-192.png", "./icons/icon-512.png"];
 

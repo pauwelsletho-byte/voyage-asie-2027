@@ -153,9 +153,19 @@ function render() {
   document.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === S.tab));
   $("#fab").hidden = !["resas", "today", "money"].includes(S.tab);
   $("#fab").setAttribute("aria-label", S.tab === "money" ? "Ajouter une dépense" : "Ajouter une réservation");
+  setTint();
   v.innerHTML = ({ today: viewToday, days: viewDays, resas: viewResas, money: viewMoney, more: viewMore })[S.tab]();
   bindView(v);
   setSync();
+}
+
+// Couleur du fond : celle du pays où on est (avant le départ : vert jade)
+function setTint() {
+  const row = dayRow(todayIso());
+  const st = row && STAGES.find((x) => x.id === row[1]);
+  const col = st && COUNTRIES[st.c] && COUNTRIES[st.c].color;
+  if (col) document.documentElement.style.setProperty("--tint", col);
+  else document.documentElement.style.removeProperty("--tint");
 }
 
 /* ---------- vues ---------- */
