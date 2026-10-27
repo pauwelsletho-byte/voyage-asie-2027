@@ -1,6 +1,7 @@
 import { TRIP, COUNTRIES, STAGES, DAYS, SEED_RESAS, CHECKLIST } from "./data.js";
 import { initStore, store, isDemo } from "./store.js";
 import { landscape, MOTIFS, TOOL_ICONS } from "./decor.js";
+import { FOODS, foodId, foodsForStage } from "./food.js";
 import { MAP_W, MAP_H, LAND, VISITED, PTS } from "./mapdata.js";
 import { bookingFor as bkByTitle, bookingPeriod } from "./booking.js";
 // retrouve les infos même si le titre a été modifié (fiches créées au départ)
@@ -98,6 +99,7 @@ function startData() {
   S.unsubs.push(store().subscribe("resas", (items, m) => { if (items) S.resas = items; setSync(m); render(); }));
   S.unsubs.push(store().subscribe("checks", (items) => { if (items) S.checks = items; render(); }));
   S.unsubs.push(store().subscribe("expenses", (items) => { if (items) S.expenses = items; render(); }));
+  S.unsubs.push(store().subscribe("food", (items) => { if (items) S.food = items; render(); }));
   S.unsubs.push(store().subscribe("vault", (items) => { if (items) S.vault = items; render(); }));
   S.unsubs.push(store().subscribe("settings", (items) => { if (items) S.settings = Object.fromEntries(items.map((i) => [i.id, i])); render(); refreshRates(); }));
   S.unsubs.push(store().subscribe("files", (items) => {
@@ -202,6 +204,7 @@ function stageBlock(st, iso) {
     <h3>À faire</h3><ul>${st.todo.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
     <h3>Où dormir</h3><p>${esc(st.sleep)}</p>
     ${hotels.length ? hotels.map(resaCard).join("") : ""}
+    ${(() => { const g = foodsForStage(st.id); return g ? `<h3>À goûter</h3><p class="foodline">${g.items.map(([fr]) => esc(fr)).join(" · ")}</p>` : ""; })()}
     ${showList(st)}
     ${st.tip ? `<p class="tip">${esc(st.tip)}</p>` : ""}
   </section>`;
@@ -353,6 +356,7 @@ function viewPrep() {
 function bindView(v) {
   v.querySelectorAll("[data-resa]").forEach((b) => (b.onclick = () => openResa(S.resas.find((r) => r.id === b.dataset.resa))));
   v.querySelectorAll("[data-day]").forEach((b) => (b.onclick = () => openDay(b.dataset.day)));
+  v.querySelectorAll("[data-food]").forEach((c) => (c.onchange = () => store().put("food", c.dataset.food, { done: c.checked, by: S.user?.email || "" })));
   v.querySelectorAll("[data-stage]").forEach((b) => (b.onclick = () => openStage(b.dataset.stage)));
   bindShow(v); bindExtras(v);
   v.querySelectorAll("[data-filter]").forEach((b) => (b.onclick = () => { S.filter = b.dataset.filter; render(); }));
@@ -527,6 +531,45 @@ const setMe = (v) => { try { localStorage.setItem("voyage-me", v); } catch {} };
 const countryOn = (iso) => (stageOn(iso) || stageById[dayRow(iso)?.[1]])?.c || "fr";
 
 /* ---------- Dépenses ---------- */
+// Poids de coût par pays (Hong Kong et Malaisie plus chers, Vietnam moins)
+const COST_W = { hk: 1.6, cn: 1, vn: 0.8, kh: 0.9, my: 1.2, fr: 0 };
+function budgetPlan(budget) {
+  const days = DAYS.map(([iso]) => [iso, countryOn(iso)]);
+  const sumW = days.reduce((t, [, c]) => t + (COST_W[c] || 0), 0) || 1;
+  const perDay = (c) => (budget * (COST_W[c] || 0)) / sumW;
+  const nDays = {}; days.forEach(([, c]) => { if (COST_W[c]) nDays[c] = (nDays[c] || 0) + 1; });
+  return { days, perDay, nDays };
+}
+function budgetDaily(ex, budget) {
+  const t = todayIso(), plan = budgetPlan(budget);
+  const spentOn = (iso) => ex.filter((e) => e.date === iso).reduce((s, e) => s + (e.eur || 0), 0);
+  const by = {}; ex.forEach((e) => { const c = e.country || countryOn(e.date); by[c] = (by[c] || 0) + (e.eur || 0); });
+  let top = "";
+  if (t >= TRIP.start && t <= TRIP.end) {
+    const c = countryOn(t), p = plan.perDay(c), sp = spentOn(t);
+    const past = plan.days.filter(([iso]) => iso <= t), plannedSoFar = past.reduce((s, [, cc]) => s + plan.perDay(cc), 0);
+    const spentSoFar = ex.filter((e) => e.date >= TRIP.start && e.date <= t).reduce((s, e) => s + (e.eur || 0), 0);
+    const left = plan.days.filter(([iso]) => iso > t && COST_W[countryOn(iso)]).length;
+    const rest = budget - ex.reduce((s, e) => s + (e.eur || 0), 0);
+    const diff = plannedSoFar - spentSoFar;
+    top = `<section class="card today-budget">
+      <div class="cbar ${sp > p ? "over" : ""}" style="--c:${COUNTRIES[c].color}"><span>Aujourd'hui</span><b>${money(sp)} <small>/ ${money(Math.round(p))}</small></b><i style="--p:${Math.min(1, sp / (p || 1))}"></i></div>
+      <p class="bud-msg ${diff >= 0 ? "ok" : "warn"}">${diff >= 0 ? `Vous avez <b>${money(Math.round(diff))}</b> d'avance sur le budget prévu` : `Vous avez dépassé le budget prévu de <b>${money(Math.round(-diff))}</b>`} depuis le départ.</p>
+      ${left ? `<p class="muted small">Il reste ${money(Math.round(rest))}, soit environ ${money(Math.round(rest / left))} par jour pour les ${left} jours restants.</p>` : ""}
+    </section>`;
+  }
+  const rows = Object.keys(plan.nDays).map((c) => {
+    const planned = plan.perDay(c) * plan.nDays[c], sp = by[c] || 0;
+    const elapsed = plan.days.filter(([iso, cc]) => cc === c && iso <= t).length;
+    return `<div class="cbar ${sp > planned ? "over" : ""}" style="--c:${COUNTRIES[c].color}"><span>${esc(COUNTRIES[c].name)} <small class="muted">· ${plan.nDays[c]} j</small></span>
+      <b>${sp ? money(Math.round(sp)) + " <small>/ " : "<small>"}${money(Math.round(planned))}</small></b><i style="--p:${Math.min(1, sp / planned)}"></i>
+      <small class="muted cday">Prévu ${money(Math.round(plan.perDay(c)))} par jour${elapsed && sp ? ` · dépensé ${money(Math.round(sp / elapsed))} par jour en moyenne` : ""}</small></div>`;
+  }).join("");
+  const other = by.fr ? `<div class="cbar" style="--c:${COUNTRIES.fr.color}"><span>Hors étapes</span><b>${money(Math.round(by.fr))}</b><i style="--p:0"></i></div>` : "";
+  return `${top}<h2 class="sect">Budget par pays</h2><div class="card">${rows}${other}
+    <p class="muted small">Le budget est réparti selon le coût de la vie : plus élevé à Hong Kong et en Malaisie, plus bas au Vietnam. Il se règle dans Outils › Réglages.</p></div>`;
+}
+
 function viewMoney() {
   const P = people(); const budget = Number(S.settings.budget?.total || 10000);
   const ex = [...S.expenses].sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.createdAt || 0) - (a.createdAt || 0));
@@ -543,8 +586,7 @@ function viewMoney() {
       <div class="bars"><div><span>Budget ${money(budget)}</span><b>${Math.round((total / budget) * 100)} %</b><i style="--p:${Math.min(1, total / budget)}"></i></div></div>
       <p class="owe">${owe}</p>
     </section>
-    ${Object.keys(byCountry).length ? `<h2 class="sect">Par pays</h2><div class="card">${Object.entries(byCountry).sort((a, b) => b[1] - a[1]).map(([c, v]) =>
-      `<div class="cbar" style="--c:${COUNTRIES[c]?.color || "#888"}"><span>${esc(COUNTRIES[c]?.name || c)}</span><b>${money(v)}</b><i style="--p:${v / maxC}"></i></div>`).join("")}</div>` : ""}
+    ${budgetDaily(ex, budget)}
     ${ex.map((e) => { const h = e.date !== lastD ? `<h2 class="sect">${esc(fmtLong(e.date))}</h2>` : ""; lastD = e.date;
       return h + `<button class="card exp" data-exp="${esc(e.id)}"><span class="emain"><strong>${esc(e.desc || CATEGORIES[e.cat] || "Dépense")}</strong>
         <small>${esc(CATEGORIES[e.cat] || "")} · payé par ${esc(P[e.payer] || "")}${e.split === "payer" ? " (pour lui/elle)" : e.split === "other" ? " (pour l'autre)" : ""}</small></span>
@@ -590,6 +632,7 @@ function confirmIn(btn, action) {
 const TOOLS = [
   ["conv", "Convertisseur", "Devises hors ligne"],
   ["phrases", "Phrases de survie", "Chinois, vietnamien, khmer, malais"],
+  ["food", "Spécialités à goûter", "À cocher étape par étape"],
   ["vault", "Documents et urgences", "Passeports, assurance, numéros"],
   ["prep", "Préparatifs", "Checklist avant le départ et sac"],
   ["settings", "Réglages", "Prénoms, budget, compte"],
@@ -597,7 +640,7 @@ const TOOLS = [
 function viewMore() {
   if (!S.sub) return `<h2 class="sect">Outils</h2><div class="tools">${TOOLS.map(([k, t, d]) => `<button class="card tool tool-${k}" data-sub="${k}"><span class="tico"><svg viewBox="0 0 24 24">${TOOL_ICONS[k]}</svg></span><strong>${t}</strong><small>${d}</small></button>`).join("")}</div>`;
   const back = `<button class="back" data-sub="">‹ Outils</button>`;
-  return back + ({ conv: viewConv, phrases: viewPhrases, vault: viewVault, prep: viewPrep, settings: viewSettings })[S.sub]();
+  return back + ({ conv: viewConv, phrases: viewPhrases, food: viewFood, vault: viewVault, prep: viewPrep, settings: viewSettings })[S.sub]();
 }
 
 function viewConv() {
@@ -613,6 +656,22 @@ function viewPhrases() {
   return `<h2 class="sect">Phrases de survie</h2>${PHRASES.map((g) => `<details class="card phr" ${g.where === COUNTRIES[countryOn(todayIso())]?.name ? "open" : ""}><summary><strong>${esc(g.lang)}</strong> <small>${esc(g.where)}</small></summary>
     ${g.rows.map(([fr, loc, ph]) => `<div class="phrow"><button class="phrase" data-show-loc="${esc(loc)}" data-show-fr="${esc(fr + " · " + ph)}" data-show-lang="${LANG_OF_GROUP[g.lang]}"><span>${esc(fr)}</span><span class="loc">${esc(loc)}</span><small>${esc(ph)}</small></button>${playBtn(loc, LANG_OF_GROUP[g.lang])}</div>`).join("")}</details>`).join("")}
     <p class="muted small pad">Le bouton haut-parleur fait parler la voix de l'iPhone, même sans réseau. Touchez une phrase pour l'afficher en grand.</p>`;
+}
+
+function viewFood() {
+  const done = new Set((S.food || []).filter((f) => f.done).map((f) => f.id));
+  const all = FOODS.reduce((n, g) => n + g.items.length, 0);
+  const here = foodsForStage((stageOn(todayIso()) || {}).id);
+  return `<h2 class="sect">Spécialités à goûter</h2>
+    <section class="card foodhead"><p class="big">${done.size}<small> / ${all}</small></p><p class="muted">goûtées à deux. Touchez le nom local pour le montrer au serveur.</p></section>
+    ${FOODS.map((g) => { const n = g.items.filter((_, i) => done.has(foodId(g, i))).length;
+      return `<details class="card food" style="--c:${COUNTRIES[g.c].color}" ${here ? (here.id === g.id ? "open" : "") : g.id === "hk" ? "open" : ""}>
+      <summary><strong>${esc(g.region)}</strong><small>${n}/${g.items.length}</small></summary>
+      ${g.items.map(([fr, loc, d], i) => { const id = foodId(g, i);
+        return `<div class="fitem ${done.has(id) ? "done" : ""}"><label class="fchk"><input type="checkbox" data-food="${id}" ${done.has(id) ? "checked" : ""}><span></span></label>
+        <div class="ftxt"><strong>${esc(fr)}</strong><small>${esc(d)}</small>
+        ${loc !== fr ? `<button class="floc" data-show-loc="${esc(loc)}" data-show-fr="${esc(fr)}" data-show-lang="${g.lang}">${esc(loc)}</button>` : ""}</div>
+        ${playBtn(loc, g.lang)}</div>`; }).join("")}</details>`; }).join("")}`;
 }
 
 function viewVault() {

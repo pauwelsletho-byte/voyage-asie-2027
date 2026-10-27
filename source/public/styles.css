@@ -256,3 +256,26 @@ body::after { content: ""; position: fixed; left: 0; right: 0; height: 110px; z-
 .mapchips::-webkit-scrollbar { display: none; }
 .mapchips .chip { background: var(--soft); font-size: 13px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px 6px 6px; }
 .mapchips .chip i { font-style: normal; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--c); color: #fff; font-size: 11px; font-weight: 700; }
+
+/* ---------- budget par jour ---------- */
+.cbar b small { font-weight: 500; color: var(--muted); }
+.cbar.over i::after { background: var(--danger) !important; }
+.cbar .cday { grid-column: 1 / -1; font-size: 12px; margin-top: -2px; }
+.bud-msg { margin: 10px 0 4px; font-size: 14px; } .bud-msg.ok b { color: var(--accent); } .bud-msg.warn b { color: var(--danger); }
+
+/* ---------- spécialités ---------- */
+.tool-food { --tc: #E0803C; }
+.foodhead { display: flex; align-items: baseline; gap: 12px; } .foodhead .big { margin: 0; } .foodhead .big { white-space: nowrap; } .foodhead .big small { font-size: 18px; color: var(--muted); } .foodhead p { margin: 0; }
+.food { border-left: 4px solid var(--c); }
+.food summary { display: flex; justify-content: space-between; align-items: center; list-style: none; cursor: pointer; }
+.food summary::-webkit-details-marker { display: none; }
+.food summary small { color: var(--c); font-weight: 700; }
+.fitem { display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.food summary + .fitem { margin-top: 10px; }
+.fchk input { position: absolute; opacity: 0; width: 0; }
+.fchk span { display: block; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--c); }
+.fchk input:checked + span { background: var(--c) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z'/%3E%3C/svg%3E") center / 18px no-repeat; }
+.ftxt strong { display: block; font-weight: 600; } .ftxt small { display: block; color: var(--muted); font-size: 13px; }
+.fitem.done .ftxt strong { text-decoration: line-through; text-decoration-color: var(--c); opacity: .7; }
+.floc { margin-top: 6px; padding: 4px 10px; border-radius: 8px; background: color-mix(in srgb, var(--c) 12%, var(--card)); color: var(--c); font-weight: 700; font-size: 15px; }
+.foodline { font-size: 14px; color: var(--muted); }
