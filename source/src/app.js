@@ -5,7 +5,7 @@ import { FOODS, foodId, foodsForStage } from "./food.js";
 import { MAP_W, MAP_H, LAND, VISITED, PTS, LL } from "./mapdata.js";
 import { TIPS, APPS } from "./tips.js";
 import { LEGS, legKm } from "./stats.js";
-import { WMO, cachedForecast, fetchForecast, fetchClimate } from "./weather.js";
+import { WMO, cachedForecast, fetchForecast, fetchClimateAll, cachedClimate } from "./weather.js";
 import { bookingFor as bkByTitle, bookingPeriod } from "./booking.js";
 // retrouve les infos même si le titre a été modifié (fiches créées au départ)
 const bookingFor = (r) => bkByTitle(r) || (r && String(r.id).startsWith("seed-") ? bkByTitle({ title: SEED_RESAS[+String(r.id).slice(5, 7)]?.[1] }) : null);
@@ -242,22 +242,23 @@ setInterval(tickClock, 30000);
 S.wx = cachedForecast();
 let climateBusy = false, wxBusy = false;
 const WX_STAGES = STAGES.filter((s) => s.id !== "kl1");
-async function ensureWeather() {
-  if (!navigator.onLine) return;
+let wxErr = "";
+const climate = () => ({ ...(cachedClimate() || {}), ...(S.settings.climate || {}) });
+async function ensureWeather(force) {
+  if (!navigator.onLine) { wxErr = "Pas de réseau : la météo se chargera dès que possible."; return; }
   const t = todayIso();
-  if (!climateBusy && t <= TRIP.end) {
-    const have = S.settings.climate || {};
-    const missing = WX_STAGES.filter((st) => !have[st.id]);
-    if (missing.length) {
-      climateBusy = true; const got = {};
-      for (const st of missing) { try { const c = await fetchClimate(st); if (c) got[st.id] = c; } catch {} }
-      if (Object.keys(got).length) store().put("settings", "climate", got).catch(() => {});
+  if ((!climateBusy || force) && t <= TRIP.end) {
+    const have = climate();
+    if (WX_STAGES.some((st) => !have[st.id])) {
+      climateBusy = true;
+      try { const got = await fetchClimateAll(WX_STAGES); wxErr = ""; if (Object.keys(got).length) { store().put("settings", "climate", got).catch(() => {}); render(); } }
+      catch (e) { wxErr = "Météo indisponible pour l'instant (" + e.message + ")."; climateBusy = false; render(); }
     }
   }
-  if (!wxBusy && t <= TRIP.end) {
+  if ((!wxBusy || force) && t <= TRIP.end) {
     const end = isoOf(new Date(D(t).getTime() + 15 * 86400000));
     const ids = STAGES.filter((st) => st.to > t && st.from <= end).map((st) => st.id);
-    if (ids.length) { wxBusy = true; try { const r = await fetchForecast(ids); if (r) { S.wx = r; render(); } } catch {} wxBusy = false; }
+    if (ids.length) { wxBusy = true; try { const r = await fetchForecast(ids); if (r) { S.wx = r; render(); } } catch (e) { wxErr = "Prévisions indisponibles (" + e.message + ")."; } wxBusy = false; }
   }
 }
 setInterval(ensureWeather, 3600e3);
@@ -274,9 +275,19 @@ function wxLine(st) {
   const days = [];
   for (let iso = st.from; iso <= st.to; iso = isoOf(new Date(D(iso).getTime() + 86400000))) { const d = wxDay(st.id, iso); if (d) days.push(d); }
   if (days.length) return `<div class="wxchips">${days.map((d) => `<span class="wxchip"><small>${esc(fmt(d.date, { weekday: "short" }))}</small>${WMO(d.code)[0]} <b>${deg(d.max)}</b>/${deg(d.min)}${d.rain ? `<small>${d.rain} %</small>` : ""}</span>`).join("")}</div>`;
-  const c = S.settings.climate?.[st.id === "kl1" ? "kl2" : st.id];
+  const c = climate()[st.id === "kl1" ? "kl2" : st.id];
   if (c) return `<p class="wxnorm">🌡️ D'habitude à ces dates : <b>${c.max}°</b> / ${c.min}° · pluie ${c.wet < 20 ? "rare" : c.wet < 45 ? "1 jour sur 3" : c.wet < 65 ? "1 jour sur 2" : "presque tous les jours"}</p>`;
   return "";
+}
+const wxIcon = (c) => (c.wet < 20 ? "☀️" : c.wet < 45 ? "🌤️" : c.wet < 65 ? "🌦️" : "🌧️");
+function climateCard() {
+  const c = climate();
+  const rows = MAP_STAGES.filter((st) => c[st.id === "kl1" ? "kl2" : st.id]);
+  return `<h2 class="sect">Le temps qui vous attend</h2><section class="card climcard">
+    ${rows.length ? `<div class="climgrid">${rows.map((st) => { const x = c[st.id]; return `<button class="clim" data-stage="${st.id}" style="--c:${COUNTRIES[st.c].color}"><span class="wxe">${wxIcon(x)}</span><span><b>${esc(st.name.replace(/ \(.*\)/, "").replace("Cascade de ", "").replace("Gorges du ", "").replace(" et Angkor", ""))}</b><small>${x.max}°/${x.min}° · ☔ ${x.wet} %</small></span></button>`; }).join("")}</div>
+      <p class="muted small">Moyennes des étés 2023 à 2025 aux dates de chaque étape (Open-Meteo) ; ☔ = part des jours de pluie. Les vraies prévisions arrivent 16 jours avant.</p>`
+    : `<p class="muted">${esc(wxErr || "Chargement de la météo…")}</p><button class="btn sm" data-wxretry>Réessayer</button>`}
+  </section>`;
 }
 function wxCard(t) {
   const days = [0, 1, 2, 3].map((k) => isoOf(new Date(D(t).getTime() + k * 86400000))).filter((iso) => iso <= TRIP.end);
@@ -294,9 +305,9 @@ function openGo(q, label, sid) {
   const ov = document.createElement("div"); ov.className = "goshow";
   ov.innerHTML = `<div class="gobox"><p class="kicker">Y aller</p><p class="golbl">${esc(label || q)}</p>
     <a class="btn primary wide" href="om://search?cll=${c[0]},${c[1]}&query=${e}">Ouvrir dans Organic Maps</a>
-    <a class="btn wide" href="https://maps.apple.com/?q=${e}&sll=${c[0]},${c[1]}" target="_blank" rel="noopener">Ouvrir dans Plans</a>
+    <a class="btn wide" href="https://www.google.com/maps/search/?api=1&query=${e}" target="_blank" rel="noopener">Ouvrir dans Google Maps</a>
     <button class="btn wide" data-gx>Fermer</button>
-    <p class="muted small">Organic Maps marche sans réseau si vous avez téléchargé la carte du pays. Pas encore installée ? <a href="https://organicmaps.app/fr/" target="_blank" rel="noopener">organicmaps.app</a></p></div>`;
+    <p class="muted small">Organic Maps marche sans réseau si vous avez téléchargé la carte du pays. Google Maps est bloqué en Chine sans VPN. Pas encore installée ? <a href="https://organicmaps.app/fr/" target="_blank" rel="noopener">organicmaps.app</a></p></div>`;
   ov.onclick = (ev) => { if (ev.target === ov || ev.target.closest("[data-gx]")) ov.remove(); };
   document.body.appendChild(ov);
 }
@@ -375,6 +386,7 @@ function viewToday() {
         <div><span>Préparatifs</span><b>${checksDone}/${CHECKLIST.length}</b><i style="--p:${checksDone / CHECKLIST.length}"></i></div>
       </div></div></section>
     ${tripMap(t)}
+    ${climateCard()}
     <h2 class="sect">Prochaines réservations à faire</h2>
     ${todo.slice(0, 6).map(resaCard).join("") || `<p class="muted pad">Tout est réservé.</p>`}
     <button class="link pad" data-go="resas">Voir toutes les réservations</button>
@@ -436,6 +448,7 @@ function viewPrep() {
 function bindView(v) {
   v.querySelectorAll("[data-resa]").forEach((b) => (b.onclick = () => openResa(S.resas.find((r) => r.id === b.dataset.resa))));
   v.querySelectorAll("[data-day]").forEach((b) => (b.onclick = () => openDay(b.dataset.day)));
+  v.querySelectorAll("[data-wxretry]").forEach((b) => (b.onclick = () => { b.textContent = "Chargement…"; ensureWeather(true); }));
   v.querySelectorAll("[data-journal]").forEach((b) => (b.onclick = () => openJournal(b.dataset.journal)));
   hydrateThumbs(v);
   v.querySelectorAll("[data-food]").forEach((c) => (c.onchange = () => store().put("food", c.dataset.food, { done: c.checked, by: S.user?.email || "" })));

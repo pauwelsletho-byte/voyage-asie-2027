@@ -321,3 +321,16 @@ body::after { content: ""; position: fixed; left: 0; right: 0; height: 110px; z-
 a.btn { text-decoration: none; color: inherit; display: block; text-align: center; }
 a.btn.primary { color: #fff; }
 .stats-hero .big { font-size: 36px; font-weight: 800; letter-spacing: -0.02em; }
+.climgrid { display: grid; grid-template-columns: 1fr; gap: 2px; }
+.clim { display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.clim:last-child { border-bottom: 0; }
+.clim .wxe { font-size: 24px; text-align: center; }
+.clim b { display: block; font-weight: 600; border-left: 3px solid var(--c); padding-left: 8px; }
+.clim small { display: block; color: var(--muted); font-size: 13px; padding-left: 11px; }
+.climcard p { margin: 10px 0 0; }
+.climgrid { grid-template-columns: 1fr 1fr; column-gap: 12px; }
+.clim { grid-template-columns: 26px 1fr; gap: 6px; border-bottom: 0; padding: 6px 0; }
+.clim .wxe { font-size: 20px; }
+.clim b { font-size: 14px; padding-left: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.clim small { font-size: 12px; padding-left: 9px; }
+.clim small { white-space: nowrap; }
