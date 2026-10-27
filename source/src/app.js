@@ -277,16 +277,16 @@ function wxLine(st) {
   for (let iso = st.from; iso <= st.to; iso = isoOf(new Date(D(iso).getTime() + 86400000))) { const d = wxDay(st.id, iso); if (d) days.push(d); }
   if (days.length) return `<div class="wxchips">${days.map((d) => `<span class="wxchip"><small>${esc(fmt(d.date, { weekday: "short" }))}</small>${WMO(d.code)[0]} <b>${deg(d.max)}</b>/${deg(d.min)}${d.rain ? `<small>${d.rain} %</small>` : ""}</span>`).join("")}</div>`;
   const c = climate()[st.id === "kl1" ? "kl2" : st.id];
-  if (c) return `<p class="wxnorm">🌡️ D'habitude à ces dates : <b>${c.max}°</b> / ${c.min}° · pluie ${c.wet < 20 ? "rare" : c.wet < 45 ? "1 jour sur 3" : c.wet < 65 ? "1 jour sur 2" : "presque tous les jours"}</p>`;
+  if (c) return `<p class="wxnorm">🌡️ D'habitude à ces dates : <b>${c.max}°</b> / ${c.min}° · ${c.wet < 20 ? "peu de pluie" : c.wet < 45 ? "quelques averses" : c.wet < 65 ? "une averse un jour sur deux" : "averses fréquentes, souvent courtes"}</p>`;
   return "";
 }
-const wxIcon = (c) => (c.wet < 20 ? "☀️" : c.wet < 45 ? "🌤️" : c.wet < 65 ? "🌦️" : "🌧️");
+const wxIcon = (c) => (c.wet < 20 ? "☀️" : c.wet < 45 ? "🌤️" : "🌦️");
 function climateCard() {
   const c = climate();
   const rows = MAP_STAGES.filter((st) => c[st.id === "kl1" ? "kl2" : st.id]);
   return `<h2 class="sect">Le temps qui vous attend</h2><section class="card climcard">
     ${rows.length ? `<div class="climgrid">${rows.map((st) => { const x = c[st.id]; return `<button class="clim" data-stage="${st.id}" style="--c:${COUNTRIES[st.c].color}"><span class="wxe">${wxIcon(x)}</span><span><b>${esc(st.name.replace(/ \(.*\)/, "").replace("Cascade de ", "").replace("Gorges du ", "").replace(" et Angkor", ""))}</b><small>${x.max}°/${x.min}° · ☔ ${x.wet} %</small></span></button>`; }).join("")}</div>
-      <p class="muted small">Moyennes des étés 2023 à 2025 aux dates de chaque étape (Open-Meteo) ; ☔ = part des jours de pluie. Les vraies prévisions arrivent 16 jours avant.</p>`
+      <p class="muted small">Moyennes des étés 2023 à 2025 aux dates de chaque étape (Open-Meteo) ; ☔ = part des jours avec au moins une averse : en été, ce sont surtout des orages courts, souvent en fin de journée, pas de la pluie toute la journée. Les vraies prévisions arrivent 16 jours avant.</p>`
     : `<p class="muted">${esc(wxErr || "Chargement de la météo…")}</p><button class="btn sm" data-wxretry>Réessayer</button>`}
   </section>`;
 }
