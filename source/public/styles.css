@@ -228,3 +228,31 @@ body::after { content: ""; position: fixed; left: 0; right: 0; height: 110px; z-
 .bkbox p { margin: 2px 0; }
 .bksites { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .bksites .chip { text-decoration: none; background: var(--card); color: var(--accent); font-weight: 600; }
+
+/* ---------- carte du parcours ---------- */
+:root { --mapsea: #CFE9EE; --mapland: #F3EFE4; --mapline: #FFFFFF; }
+:root[data-theme="dark"] { --mapsea: #12303A; --mapland: #22322D; --mapline: #182622; }
+@media (prefers-color-scheme: dark) { :root[data-theme="auto"] { --mapsea: #12303A; --mapland: #22322D; --mapline: #182622; } }
+.mapcard { padding: 0; overflow: hidden; }
+.tripmap { display: block; width: 100%; height: auto; }
+.tripmap .sea { fill: var(--mapsea); }
+.tripmap .land { fill: var(--mapland); stroke: var(--mapline); stroke-width: .8; stroke-linejoin: round; }
+.tripmap .land.v { fill: color-mix(in srgb, var(--c) 22%, var(--mapland)); }
+.tripmap .seg { fill: none; stroke: var(--c); stroke-width: 2.4; stroke-linecap: round; opacity: .55; }
+.tripmap .seg.fly { stroke-dasharray: 2 5; stroke-width: 2; }
+.tripmap .seg.done { opacity: 1; }
+.mdot { cursor: pointer; }
+.mdot .hit { fill: transparent; }
+.mdot .pin { fill: var(--card); stroke: var(--c); stroke-width: 2.4; }
+.mdot.past .pin, .mdot.cur .pin { fill: var(--c); }
+.mdot .num { font: 700 9px -apple-system, system-ui, sans-serif; text-anchor: middle; fill: var(--c); pointer-events: none; }
+.mdot.past .num, .mdot.cur .num { fill: #fff; }
+.mdot .lbl { font: 700 11.5px -apple-system, system-ui, sans-serif; fill: var(--ink); paint-order: stroke; stroke: var(--mapland); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+.me circle { fill: var(--accent2); }
+.me .halo { fill: var(--accent2); opacity: .3; transform-box: fill-box; transform-origin: center; animation: pulse 1.8s ease-out infinite; }
+@keyframes pulse { from { transform: scale(.4); opacity: .55; } to { transform: scale(1.4); opacity: 0; } }
+.mapcap { margin: 10px 16px 4px; font-size: 14px; }
+.mapchips { display: flex; gap: 6px; overflow-x: auto; padding: 6px 16px 14px; scrollbar-width: none; }
+.mapchips::-webkit-scrollbar { display: none; }
+.mapchips .chip { background: var(--soft); font-size: 13px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px 6px 6px; }
+.mapchips .chip i { font-style: normal; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--c); color: #fff; font-size: 11px; font-weight: 700; }

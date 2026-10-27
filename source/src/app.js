@@ -1,6 +1,7 @@
 import { TRIP, COUNTRIES, STAGES, DAYS, SEED_RESAS, CHECKLIST } from "./data.js";
 import { initStore, store, isDemo } from "./store.js";
 import { landscape, MOTIFS, TOOL_ICONS } from "./decor.js";
+import { MAP_W, MAP_H, LAND, VISITED, PTS } from "./mapdata.js";
 import { bookingFor as bkByTitle, bookingPeriod } from "./booking.js";
 // retrouve les infos même si le titre a été modifié (fiches créées au départ)
 const bookingFor = (r) => bkByTitle(r) || (r && String(r.id).startsWith("seed-") ? bkByTitle({ title: SEED_RESAS[+String(r.id).slice(5, 7)]?.[1] }) : null);
@@ -218,6 +219,66 @@ function dayBlock(iso) {
   </section>`;
 }
 
+/* ---------- carte du parcours ---------- */
+const ROUTE = ["hongkong", "zhangjiajie", "fenghuang", "huangguoshu", "kunming", "gorges", "shangrila", "dali", "kunming",
+  "✈hanoi", "croisiere", "ninhbinh", "puluong", "ninhbinh", "phongnha", "hoian", "quynhon", "hcmc", "✈siemreap", "✈kl1", "tioman", "kl2"];
+const MAP_STAGES = STAGES.filter((s) => s.id !== "kl1");
+const LABELS = { hongkong: ["Hong Kong", -6, 18, "end"], zhangjiajie: ["Zhangjiajie", 12, 4], kunming: ["Kunming", 12, 14], hanoi: ["Hanoi", -12, -8, "end"],
+  hoian: ["Hội An", 12, 4], hcmc: ["Saigon", 12, 6], siemreap: ["Siem Reap", -12, 4, "end"], kl2: ["Kuala Lumpur", -12, 4, "end"], tioman: ["Tioman", 12, 4],
+  shangrila: ["Yunnan", -12, -6, "end"] };
+function wherePos(t) {
+  if (t < TRIP.start || t > TRIP.end) return null;
+  const st = stageOn(t) || stageById[dayRow(t)?.[1]];
+  if (st) return { p: PTS[st.id], st };
+  const prev = [...STAGES].reverse().find((s) => s.to <= t) || STAGES[0], next = STAGES.find((s) => s.from > t) || prev;
+  const a = PTS[prev.id], b = PTS[next.id];
+  return { p: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], st: null };
+}
+function tripMap(t) {
+  const pos = wherePos(t);
+  const segs = [];
+  for (let i = 1; i < ROUTE.length; i++) {
+    const fly = ROUTE[i].startsWith("✈"), id = ROUTE[i].replace("✈", ""), from = ROUTE[i - 1].replace("✈", "");
+    const a = PTS[from], b = PTS[id], st = stageById[id];
+    const done = st && st.from <= t;
+    const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, dx = b[0] - a[0], dy = b[1] - a[1];
+    const bend = fly ? 0.18 : 0.08;
+    segs.push(`<path d="M${a} Q${mx - dy * bend},${my + dx * bend} ${b}" class="seg ${fly ? "fly" : ""} ${done ? "done" : ""}" style="--c:${COUNTRIES[st?.c || "fr"].color}"/>`);
+  }
+  const dots = MAP_STAGES.map((st, i) => {
+    const [x, y] = PTS[st.id], c = COUNTRIES[st.c].color, past = st.to <= t, cur = pos?.st && (pos.st.id === st.id || (pos.st.id === "kl1" && st.id === "kl2"));
+    const L = LABELS[st.id];
+    return `<g class="mdot ${past ? "past" : ""} ${cur ? "cur" : ""}" data-stage="${st.id}" style="--c:${c}" role="button" aria-label="${esc(st.name)}">
+      <circle cx="${x}" cy="${y}" r="16" class="hit"/><circle cx="${x}" cy="${y}" r="8.5" class="pin"/>
+      <text x="${x}" y="${y + 3.2}" class="num">${i + 1}</text>
+      ${L ? `<text x="${x + L[1]}" y="${y + L[2]}" class="lbl" text-anchor="${L[3] || "start"}">${esc(L[0])}</text>` : ""}</g>`;
+  }).join("");
+  const me = pos ? `<g class="me"><circle cx="${pos.p[0]}" cy="${pos.p[1]}" r="14" class="halo"/><circle cx="${pos.p[0]}" cy="${pos.p[1]}" r="5"/></g>` : "";
+  const caption = pos ? (pos.st ? `Vous êtes à <b>${esc(pos.st.name)}</b>` : "En route vers la prochaine étape")
+    : t < TRIP.start ? `${MAP_STAGES.length} étapes, ${daysBetween(TRIP.start, TRIP.end)} jours` : "Le voyage est terminé";
+  return `<section class="card mapcard">
+    <svg viewBox="0 0 ${MAP_W} ${MAP_H}" class="tripmap" aria-label="Carte du parcours">
+      <rect width="${MAP_W}" height="${MAP_H}" class="sea"/>
+      <path d="${LAND}" class="land"/>
+      ${Object.entries(VISITED).map(([k, d]) => `<path d="${d}" class="land v" style="--c:${COUNTRIES[k].color}"/>`).join("")}
+      ${segs.join("")}${dots}${me}
+    </svg>
+    <p class="mapcap">${caption}<span class="muted"> · touchez une étape</span></p>
+    <div class="mapchips">${MAP_STAGES.map((st, i) => `<button class="chip" data-stage="${st.id}" style="--c:${COUNTRIES[st.c].color}"><i>${i + 1}</i>${esc(st.name.replace(" (nuit tampon)", ""))}</button>`).join("")}</div>
+  </section>`;
+}
+function openStage(id) {
+  const st = stageById[id]; if (!st) return;
+  const days = DAYS.filter(([iso, sid]) => (sid || (stageOn(iso) || {}).id) === id);
+  const sh = openSheet(`<div class="sheet-head"><h2>${esc(st.name)}</h2><button class="x" data-close aria-label="Fermer">✕</button></div>
+    ${stageBlock(st, st.from)}
+    <h2 class="sect">Les jours</h2>
+    ${days.map(([iso, , trj, act, nuit]) => `<button class="row" style="--c:${COUNTRIES[st.c].color}" data-day="${iso}"><span class="date">${esc(fmt(iso))}</span><span class="txt"><strong>${esc(act || trj || "")}</strong><small>${esc(nuit)}</small></span></button>`).join("")}`);
+  sh.querySelectorAll("[data-resa]").forEach((b) => (b.onclick = () => openResa(S.resas.find((r) => r.id === b.dataset.resa))));
+  sh.querySelectorAll("[data-day]").forEach((b) => (b.onclick = () => openDay(b.dataset.day)));
+  bindShow(sh);
+}
+
 function viewToday() {
   const t = todayIso();
   if (t < TRIP.start) {
@@ -231,16 +292,18 @@ function viewToday() {
         <div><span>Réservations</span><b>${done}/${S.resas.length}</b><i style="--p:${S.resas.length ? done / S.resas.length : 0}"></i></div>
         <div><span>Préparatifs</span><b>${checksDone}/${CHECKLIST.length}</b><i style="--p:${checksDone / CHECKLIST.length}"></i></div>
       </div></div></section>
+    ${tripMap(t)}
     <h2 class="sect">Prochaines réservations à faire</h2>
     ${todo.slice(0, 6).map(resaCard).join("") || `<p class="muted pad">Tout est réservé.</p>`}
     <button class="link pad" data-go="resas">Voir toutes les réservations</button>
     ${isDemo() ? `<p class="note">Mode démo : les données restent sur cet appareil. La synchronisation entre vos deux téléphones s'active une fois Firebase configuré.</p>` : ""}`;
   }
-  if (t > TRIP.end) return `<section class="hero deco">${landscape("h3")}<div class="hero-in"><p class="big">Bon retour !</p><p class="muted">Le voyage est terminé. Tout reste consultable dans l'onglet Jours.</p></div></section>`;
+  if (t > TRIP.end) return `<section class="hero deco">${landscape("h3")}<div class="hero-in"><p class="big">Bon retour !</p><p class="muted">Le voyage est terminé. Tout reste consultable dans l'onglet Jours.</p></div></section>${tripMap(t)}`;
   const tomorrow = isoOf(new Date(D(t).getTime() + 86400000));
   const st = stageOn(t) || stageById[dayRow(t)?.[1]];
   const today = resasOn(t), tom = resasOn(tomorrow);
   return `${dayBlock(t)}
+    ${tripMap(t)}
     ${today.length ? `<h2 class="sect">Aujourd'hui</h2>${today.map(resaCard).join("")}` : ""}
     ${tom.length ? `<h2 class="sect">Demain</h2>${tom.map(resaCard).join("")}` : ""}
     ${stageBlock(st, t)}`;
@@ -290,6 +353,7 @@ function viewPrep() {
 function bindView(v) {
   v.querySelectorAll("[data-resa]").forEach((b) => (b.onclick = () => openResa(S.resas.find((r) => r.id === b.dataset.resa))));
   v.querySelectorAll("[data-day]").forEach((b) => (b.onclick = () => openDay(b.dataset.day)));
+  v.querySelectorAll("[data-stage]").forEach((b) => (b.onclick = () => openStage(b.dataset.stage)));
   bindShow(v); bindExtras(v);
   v.querySelectorAll("[data-filter]").forEach((b) => (b.onclick = () => { S.filter = b.dataset.filter; render(); }));
   v.querySelectorAll("[data-go]").forEach((b) => (b.onclick = () => { S.tab = b.dataset.go; render(); }));
