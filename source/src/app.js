@@ -1,6 +1,9 @@
 import { TRIP, COUNTRIES, STAGES, DAYS, SEED_RESAS, CHECKLIST } from "./data.js";
 import { initStore, store, isDemo } from "./store.js";
 import { landscape, MOTIFS, TOOL_ICONS } from "./decor.js";
+import { bookingFor as bkByTitle, bookingPeriod } from "./booking.js";
+// retrouve les infos même si le titre a été modifié (fiches créées au départ)
+const bookingFor = (r) => bkByTitle(r) || (r && String(r.id).startsWith("seed-") ? bkByTitle({ title: SEED_RESAS[+String(r.id).slice(5, 7)]?.[1] }) : null);
 import { CURRENCIES, CURRENCY_OF, CATEGORIES, PHRASES, LOCAL_PLACES, EMERGENCY, VAULT_SEED } from "./extras.js";
 
 /* ---------- utilitaires ---------- */
@@ -170,15 +173,18 @@ function setTint() {
 
 /* ---------- vues ---------- */
 const resasOn = (iso) => S.resas.filter((r) => r.date === iso).sort(byDate);
+const bkFrom = (r) => bookingFor(r)?.from || r.date || "9";
+const byBooking = (a, b) => bkFrom(a).localeCompare(bkFrom(b)) || byDate(a, b);
 const byDate = (a, b) => (a.date || "9").localeCompare(b.date || "9") || (a.time || "").localeCompare(b.time || "");
 const hotelsFor = (stage) => stage ? S.resas.filter((r) => r.type === "hotel" && r.date >= stage.from && r.date < stage.to) : [];
 
 function resaCard(r) {
   const nf = (r.files || []).length;
+  const bk = bookingFor(r);
   return `<button class="card resa ${r.status}" data-resa="${esc(r.id)}">
     <span class="rico t-${r.type}">${icon(r.type)}</span>
     <span class="rmain"><strong>${esc(r.title)}</strong>
-      <small>${esc(fmt(r.date))}${r.time ? " · " + esc(r.time) : ""}${r.ref ? " · n° " + esc(r.ref) : ""}${r.price ? " · " + esc(r.price) : ""}</small></span>
+      <small>${esc(fmt(r.date))}${r.time ? " · " + esc(r.time) : ""}${r.ref ? " · n° " + esc(r.ref) : ""}${r.price ? " · " + esc(r.price) : ""}</small>${bk && r.status !== "reserve" ? `<small class="bk ${bk.from <= todayIso() ? "now" : ""}">${bk.from <= todayIso() ? "À faire maintenant" : "À réserver : " + esc(bk.when)}${bk.sites.length ? " · " + esc(bk.sites.slice(0, 3).map((x) => x[0]).join(", ")) : ""}</small>` : ""}</span>
     <span class="rside"><span class="badge ${r.status}">${STATUS[r.status] || "—"}</span>${nf ? `<span class="clip">${nf} ${nf > 1 ? "fichiers" : "fichier"}</span>` : ""}</span>
   </button>`;
 }
@@ -216,7 +222,7 @@ function viewToday() {
   const t = todayIso();
   if (t < TRIP.start) {
     const left = daysBetween(t, TRIP.start);
-    const todo = S.resas.filter((r) => r.status !== "reserve").sort(byDate);
+    const todo = S.resas.filter((r) => r.status !== "reserve").sort(byBooking);
     const done = S.resas.length - todo.length;
     const checksDone = CHECKLIST.filter((_, i) => S.checks.some((c) => c.id === "c" + i && c.done)).length;
     return `
@@ -258,13 +264,14 @@ function viewDays() {
 }
 
 function viewResas() {
-  const list = S.resas.filter((r) => S.filter === "all" || (S.filter === "todo" ? r.status !== "reserve" : r.status === "reserve")).sort(byDate);
+  const list = S.resas.filter((r) => S.filter === "all" || (S.filter === "todo" ? r.status !== "reserve" : r.status === "reserve")).sort(S.filter === "todo" ? byBooking : byDate);
   let lastM = "";
   const counts = { todo: S.resas.filter((r) => r.status !== "reserve").length, done: S.resas.filter((r) => r.status === "reserve").length };
   return `<div class="chips">
     ${[["todo", `À faire (${counts.todo})`], ["done", `Réservé (${counts.done})`], ["all", "Tout"]].map(([k, l]) => `<button class="chip ${S.filter === k ? "on" : ""}" data-filter="${k}">${l}</button>`).join("")}
   </div>` + (list.map((r) => {
-    const m = r.date ? fmt(r.date, { month: "long", year: "numeric" }) : "Sans date";
+    const m = S.filter === "todo" ? "À réserver : " + bookingPeriod(bookingFor(r)?.from || (r.date < TRIP.start ? r.date : "2027-06-27"))
+      : r.date ? fmt(r.date, { month: "long", year: "numeric" }) : "Sans date";
     const h = m !== lastM ? `<h2 class="sect">${esc(m)}</h2>` : ""; lastM = m;
     return h + resaCard(r);
   }).join("") || `<p class="muted pad">Rien ici.</p>`);
@@ -315,6 +322,7 @@ function openResa(r) {
   let files = [...(r.files || [])];
   const sh = openSheet(`
     <div class="sheet-head"><h2>${isNew ? "Nouvelle réservation" : "Réservation"}</h2><button class="x" data-close aria-label="Fermer">✕</button></div>
+    ${(() => { const bk = bookingFor(r); return bk && r.status !== "reserve" ? `<div class="bkbox"><p class="kicker">Quand réserver</p><p><b>${esc(bk.when)}</b></p>${bk.tip ? `<p class="muted small">${esc(bk.tip)}</p>` : ""}${bk.sites.length ? `<div class="bksites">${bk.sites.map(([n, u]) => `<a class="chip" href="${esc(u)}" target="_blank" rel="noopener">${esc(n)} ↗</a>`).join("")}</div>` : ""}</div>` : ""; })()}
     <form id="rf" class="form">
       <label>Titre<input name="title" value="${esc(r.title || "")}" required placeholder="Ex. Hôtel Fenghuang"></label>
       <div class="two">
