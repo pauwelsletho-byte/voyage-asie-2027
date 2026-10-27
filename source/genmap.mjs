@@ -29,5 +29,6 @@ export const MAP_W = ${W}, MAP_H = ${H};
 export const LAND = ${JSON.stringify(land.join(""))};
 export const VISITED = ${JSON.stringify(visited)};
 export const PTS = ${JSON.stringify(pts)};
+export const LL = ${JSON.stringify(Object.fromEntries(Object.entries(P).map(([k, [lon, lat]]) => [k, [lat, lon]])))};
 `);
 console.log("ok", Math.round(readFileSync("src/mapdata.js").length / 1024) + " Ko");

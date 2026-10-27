@@ -1,0 +1,496 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Asie 2027//FR
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Asie 2027 · rappels
+X-WR-TIMEZONE:Europe/Paris
+REFRESH-INTERVAL;VALUE=DURATION:P1D
+BEGIN:VEVENT
+UID:resa-2026-12-01@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20261201
+DTEND;VALUE=DATE:20261202
+SUMMARY:Asie 2027 : 3 réservations à faire
+DESCRIPTION:À réserver :\n• Vol Nice → Hong Kong (Décembre à mars\, avan
+ t avril) : Google Flights\, Skyscanner. Escale sur le même billet\, bag
+ age en soute inclus. Alerte de prix dès maintenant.\n• Vol Kuala Lumpur
+  → Nice (Décembre à mars\, avant avril) : Google Flights\, Skyscanner. 
+ Idéalement sur le même billet que l'aller.\n• Assurance voyage (Dès l'a
+ chat des vols). Annulation\, santé\, rapatriement\, météo. Vérifier d'a
+ bord ce que couvre la carte bancaire.\n\nDétails et liens dans l'appli 
+ : https://pauwelsletho-byte.github.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : 3 réservations à faire
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:resa-2027-02-15@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270215
+DTEND;VALUE=DATE:20270216
+SUMMARY:Asie 2027 : Vol Siem Reap → Kuala Lumpur
+DESCRIPTION:À réserver :\n• Vol Siem Reap → Kuala Lumpur (Promo AirAsia 
+ fin février\, sinon avril) : AirAsia. Guetter les grosses promos (novem
+ bre\, février).\n\nDétails et liens dans l'appli : https://pauwelsletho
+ -byte.github.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Vol Siem Reap → Kuala Lumpur
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:resa-2027-04-01@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270401
+DTEND;VALUE=DATE:20270402
+SUMMARY:Asie 2027 : 16 réservations à faire
+DESCRIPTION:À réserver :\n• Hôtel Hong Kong (2 nuits) (Avril) : Booking\
+ , Agoda\, Trip.com. Annulation gratuite si possible.\n• Hôtel Zhangjiaj
+ ie ville (1 nuit) (Avril) : Booking\, Agoda\, Trip.com. Vérifier que l'
+ hôtel accepte les étrangers.\n• Guesthouse Wulingyuan (2 nuits) (Avril)
+  : Booking\, Agoda\, Trip.com. Vérifier que l'hôtel accepte les étrange
+ rs.\n• Auberge Fenghuang (2 nuits) (Avril) : Booking\, Agoda\, Trip.com
+ . Chambre avec vue sur la rivière.\n• Hôtel Huangguoshu (1 nuit) (Avril
+ ) : Booking\, Agoda\, Trip.com\n• Halfway Guesthouse (1 nuit) (Avril) :
+  Trip.com\, Booking. Chambre avec vue\, ça part vite en été.\n• Hôtel S
+ hangri-La (2 nuits) (Avril) : Booking\, Agoda\, Trip.com\n• Guesthouse 
+ Dali (2 nuits) (Avril) : Booking\, Agoda\, Trip.com\n• Hôtel Kunming (1
+  nuit) (Avril) : Booking\, Agoda\, Trip.com\n• Vol Kunming → Hanoi (Avr
+ il) : Google Flights\, Vietnam Airlines\, China Eastern\n• Bungalow Nin
+ h Binh (3 nuits) (Avril) : Booking\, Agoda. Tam Cốc\, avec piscine.\n• 
+ Bungalow Pù Luông (2 nuits) (Avril) : Booking\, Agoda\n• Villa Hội An (
+ 4 nuits) (Avril) : Booking\, Agoda. Avec piscine.\n• Vol Hô Chi Minh-Vi
+ lle → Siem Reap (Avril) : Google Flights\, Vietnam Airlines\n• Hôtel Si
+ em Reap (4 nuits) (Avril) : Booking\, Agoda. Hôtel-boutique avec piscin
+ e.\n• Hôtel Kuala Lumpur (2 nuits) (Avril) : Booking\, Agoda. Piscine s
+ ur le toit.\n\nDétails et liens dans l'appli : https://pauwelsletho-byt
+ e.github.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : 16 réservations à faire
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:resa-2027-05-01@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270501
+DTEND;VALUE=DATE:20270502
+SUMMARY:Asie 2027 : 9 réservations à faire
+DESCRIPTION:À réserver :\n• Hôtel Hanoi (3 nuits) (Mai) : Booking\, Agod
+ a\n• Croisière baie de Lan Ha (Mai) : Klook\, GetYourGuide. Vérifier le
+  remboursement en cas de typhon et le dépôt à Ninh Binh le 17.\n• Guest
+ house Phong Nha (3 nuits) (Mai) : Booking\, Agoda\n• Excursion Tu Lan (
+ Mai) : Oxalis. Places limitées.\n• Hôtel Quy Nhon (2 nuits) (Mai) : Boo
+ king\, Agoda\n• Hôtel Hô Chi Minh-Ville (4 nuits) (Mai) : Booking\, Ago
+ da\n• Hôtel KL près de TBS (1 nuit) (Mai) : Booking\, Agoda. Près de la
+  gare routière TBS.\n• PADI Open Water (Mai (choisir le centre dès févr
+ ier)). Récupérer le code de la théorie en ligne.\n• Chalet Tioman (6 nu
+ its) (Mai) : Booking\, Agoda. Salang ou Air Batang.\n\nDétails et liens
+  dans l'appli : https://pauwelsletho-byte.github.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : 9 réservations à faire
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:resa-2027-06-01@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270601
+DTEND;VALUE=DATE:20270602
+SUMMARY:Asie 2027 : 2 réservations à faire
+DESCRIPTION:À réserver :\n• Train G6080 Hong Kong → Zhangjiajie-Ouest (D
+ emande dès début juin\, ventes vers le 15 juin) : Trains Trip.com\, 123
+ 06. Un seul train par jour : déposer la demande sur Trip.com dès début 
+ juin\, elle part à l'ouverture.\n• E-visa Cambodge (En juin ou en route
+ \, avant le 6 août) : evisa.gov.kh. Valable 3 mois : pas avant mai.\n\n
+ Détails et liens dans l'appli : https://pauwelsletho-byte.github.io/voy
+ age-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : 2 réservations à faire
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:resa-2027-06-18@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270618
+DTEND;VALUE=DATE:20270619
+SUMMARY:Asie 2027 : Train Zhangjiajie → Fenghuang
+DESCRIPTION:À réserver :\n• Train Zhangjiajie → Fenghuang (Vers le 18 ju
+ in) : Trains Trip.com\, 12306. Ventes environ 15 jours avant.\n\nDétail
+ s et liens dans l'appli : https://pauwelsletho-byte.github.io/voyage-as
+ ie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Train Zhangjiajie → Fenghuang
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:resa-2027-06-20@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270620
+DTEND;VALUE=DATE:20270621
+SUMMARY:Asie 2027 : Trains Fenghuang → Anshun
+DESCRIPTION:À réserver :\n• Trains Fenghuang → Anshun (Vers le 20 juin) 
+ : Trains Trip.com\, 12306. Ventes environ 15 jours avant.\n\nDétails et
+  liens dans l'appli : https://pauwelsletho-byte.github.io/voyage-asie-2
+ 027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Trains Fenghuang → Anshun
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:resa-2027-06-21@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270621
+DTEND;VALUE=DATE:20270622
+SUMMARY:Asie 2027 : 2 réservations à faire
+DESCRIPTION:À réserver :\n• Train Anshun → Kunming (Vers le 21 juin) : T
+ rains Trip.com\, 12306. À prendre en même temps que le train de nuit.\n
+ • Train de nuit Y752 Kunming → Lijiang (Vers le 21 juin) : Trains Trip.
+ com\, 12306. Couchette molle (soft sleeper).\n\nDétails et liens dans l
+ 'appli : https://pauwelsletho-byte.github.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : 2 réservations à faire
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:resa-2027-06-25@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270625
+DTEND;VALUE=DATE:20270626
+SUMMARY:Asie 2027 : Train Shangri-La → Dali
+DESCRIPTION:À réserver :\n• Train Shangri-La → Dali (Vers le 25 juin) : 
+ Trains Trip.com\, 12306. Ventes environ 15 jours avant.\n\nDétails et l
+ iens dans l'appli : https://pauwelsletho-byte.github.io/voyage-asie-202
+ 7/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Train Shangri-La → Dali
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:resa-2027-06-27@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270627
+DTEND;VALUE=DATE:20270628
+SUMMARY:Asie 2027 : 2 réservations à faire
+DESCRIPTION:À réserver :\n• Mont Tianmen (billet nominatif) (3 ou 4 jour
+ s avant) : Trip.com. Billet lié au passeport.\n• Train Dali → Kunming (
+ Vers le 27 juin\, le jour du départ) : Trains Trip.com\, 12306. Ventes 
+ environ 15 jours avant.\n\nDétails et liens dans l'appli : https://pauw
+ elsletho-byte.github.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : 2 réservations à faire
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:resa-2027-06-28@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270628
+DTEND;VALUE=DATE:20270629
+SUMMARY:Asie 2027 : Parc de Wulingyuan
+DESCRIPTION:À réserver :\n• Parc de Wulingyuan (billet 4 jours) (3 ou 4 
+ jours avant) : Trip.com. Billet lié au passeport.\n\nDétails et liens d
+ ans l'appli : https://pauwelsletho-byte.github.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Parc de Wulingyuan
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:resa-2027-07-04@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270704
+DTEND;VALUE=DATE:20270705
+SUMMARY:Asie 2027 : Moto Ninh Binh
+DESCRIPTION:À réserver :\n• Moto Ninh Binh (3 jours) (1 à 2 semaines ava
+ nt (dès mai pour une 250)) : WhatsApp. Par WhatsApp avec l'hôtel ou un 
+ loueur de Ninh Binh.\n\nDétails et liens dans l'appli : https://pauwels
+ letho-byte.github.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Moto Ninh Binh
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:resa-2027-07-08@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270708
+DTEND;VALUE=DATE:20270709
+SUMMARY:Asie 2027 : Train de nuit SE1 Ninh Binh → Đồng Hới
+DESCRIPTION:À réserver :\n• Train de nuit SE1 Ninh Binh → Đồng Hới (1 à 
+ 2 semaines avant) : dsvn.vn\, 12Go\, Baolau. Couchette à 4.\n\nDétails 
+ et liens dans l'appli : https://pauwelsletho-byte.github.io/voyage-asie
+ -2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Train de nuit SE1 Ninh Binh → Đồng Hới
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:resa-2027-07-18@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270718
+DTEND;VALUE=DATE:20270719
+SUMMARY:Asie 2027 : Train de nuit SE1 Diêu Trì → Saigon
+DESCRIPTION:À réserver :\n• Train de nuit SE1 Diêu Trì → Saigon (1 à 2 s
+ emaines avant) : dsvn.vn\, 12Go\, Baolau. Couchette à 4.\n\nDétails et 
+ liens dans l'appli : https://pauwelsletho-byte.github.io/voyage-asie-20
+ 27/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Train de nuit SE1 Diêu Trì → Saigon
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:resa-2027-07-22@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270722
+DTEND;VALUE=DATE:20270723
+SUMMARY:Asie 2027 : Train Đồng Hới → Đà Nẵng
+DESCRIPTION:À réserver :\n• Train Đồng Hới → Đà Nẵng (Quelques jours ava
+ nt) : dsvn.vn\, 12Go\, Baolau\n\nDétails et liens dans l'appli : https:
+ //pauwelsletho-byte.github.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Train Đồng Hới → Đà Nẵng
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:resa-2027-07-26@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270726
+DTEND;VALUE=DATE:20270727
+SUMMARY:Asie 2027 : Train Đà Nẵng → Diêu Trì
+DESCRIPTION:À réserver :\n• Train Đà Nẵng → Diêu Trì (Quelques jours ava
+ nt) : dsvn.vn\, 12Go\, Baolau\n\nDétails et liens dans l'appli : https:
+ //pauwelsletho-byte.github.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Train Đà Nẵng → Diêu Trì
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:resa-2027-08-04@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270804
+DTEND;VALUE=DATE:20270805
+SUMMARY:Asie 2027 : Bus TBS → Mersing + ferry Tioman
+DESCRIPTION:À réserver :\n• Bus TBS → Mersing + ferry Tioman (Environ 1 
+ semaine avant) : 12Go\, Easybook. Horaires du ferry selon les marées.\n
+ \nDétails et liens dans l'appli : https://pauwelsletho-byte.github.io/v
+ oyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Bus TBS → Mersing + ferry Tioman
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:resa-2027-08-07@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270807
+DTEND;VALUE=DATE:20270808
+SUMMARY:Asie 2027 : Carte d'arrivée Malaisie
+DESCRIPTION:À réserver :\n• Carte d'arrivée Malaisie (MDAC) (Dans les 3 
+ jours avant l'arrivée) : MDAC. Gratuit\, uniquement sur le site officie
+ l.\n\nDétails et liens dans l'appli : https://pauwelsletho-byte.github.
+ io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Carte d'arrivée Malaisie
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:prep-0@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20261115
+DTEND;VALUE=DATE:20261116
+SUMMARY:Asie 2027 : Vérifier les passeports
+DESCRIPTION:Valables jusqu'à fin février 2028\, 2 pages vierges.\n\nDéta
+ ils et liens dans l'appli : https://pauwelsletho-byte.github.io/voyage-
+ asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Vérifier les passeports
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:prep-1@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270115
+DTEND;VALUE=DATE:20270116
+SUMMARY:Asie 2027 : Demander le permis international
+DESCRIPTION:Sur ants.gouv.fr\, gratuit\, catégorie A pour la moto.\n\nDé
+ tails et liens dans l'appli : https://pauwelsletho-byte.github.io/voyag
+ e-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Demander le permis international
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:prep-2@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270315
+DTEND;VALUE=DATE:20270316
+SUMMARY:Asie 2027 : Vérifier l'exemption de visa chinoise pour 2027
+DESCRIPTION:Sinon\, prévoir la demande de visa en mai.\n\nDétails et lie
+ ns dans l'appli : https://pauwelsletho-byte.github.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Vérifier l'exemption de visa chinoise pour 2027
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:prep-3@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270415
+DTEND;VALUE=DATE:20270416
+SUMMARY:Asie 2027 : Rendez-vous vaccins
+DESCRIPTION:Centre de vaccinations internationales : hépatite A\, typhoï
+ de\, rappel DTP.\n\nDétails et liens dans l'appli : https://pauwelsleth
+ o-byte.github.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Rendez-vous vaccins
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:prep-4@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270601
+DTEND;VALUE=DATE:20270602
+SUMMARY:Asie 2027 : Théorie PADI en ligne
+DESCRIPTION:8 à 12 h\, plus le questionnaire médical.\n\nDétails et lien
+ s dans l'appli : https://pauwelsletho-byte.github.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Théorie PADI en ligne
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:prep-5@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270615
+DTEND;VALUE=DATE:20270616
+SUMMARY:Asie 2027 : Alipay\, VPN\, eSIM\, Grab
+DESCRIPTION:Relier Alipay à la carte\, tester le VPN\, installer l'eSIM 
+ et Grab.\n\nDétails et liens dans l'appli : https://pauwelsletho-byte.g
+ ithub.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Alipay\, VPN\, eSIM\, Grab
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:prep-6@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270620
+DTEND;VALUE=DATE:20270621
+SUMMARY:Asie 2027 : Inscription sur Ariane
+DESCRIPTION:Site du ministère des Affaires étrangères.\n\nDétails et lie
+ ns dans l'appli : https://pauwelsletho-byte.github.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Inscription sur Ariane
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:prep-7@asie2027
+DTSTAMP:20261027T152406Z
+DTSTART;VALUE=DATE:20270624
+DTEND;VALUE=DATE:20270625
+SUMMARY:Asie 2027 : Météo et typhons
+DESCRIPTION:Regarder MyObservatory avant le départ pour Hong Kong.\n\nDé
+ tails et liens dans l'appli : https://pauwelsletho-byte.github.io/voyag
+ e-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : Météo et typhons
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+END:VCALENDAR

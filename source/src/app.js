@@ -2,7 +2,10 @@ import { TRIP, COUNTRIES, STAGES, DAYS, SEED_RESAS, CHECKLIST } from "./data.js"
 import { initStore, store, isDemo } from "./store.js";
 import { landscape, MOTIFS, TOOL_ICONS } from "./decor.js";
 import { FOODS, foodId, foodsForStage } from "./food.js";
-import { MAP_W, MAP_H, LAND, VISITED, PTS } from "./mapdata.js";
+import { MAP_W, MAP_H, LAND, VISITED, PTS, LL } from "./mapdata.js";
+import { TIPS, APPS } from "./tips.js";
+import { LEGS, legKm } from "./stats.js";
+import { WMO, cachedForecast, fetchForecast, fetchClimate } from "./weather.js";
 import { bookingFor as bkByTitle, bookingPeriod } from "./booking.js";
 // retrouve les infos même si le titre a été modifié (fiches créées au départ)
 const bookingFor = (r) => bkByTitle(r) || (r && String(r.id).startsWith("seed-") ? bkByTitle({ title: SEED_RESAS[+String(r.id).slice(5, 7)]?.[1] }) : null);
@@ -37,7 +40,7 @@ const STATUS = { a_reserver: "À réserver", repere: "Repéré", reserve: "Rése
 const icon = (t, cls = "") => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[t] || ICONS.activite}</svg>`;
 
 /* ---------- état ---------- */
-const S = { user: null, resas: [], checks: [], files: [], expenses: [], vault: [], settings: {}, tab: "today", sub: null, filter: "todo", sync: { fromCache: true, pending: false }, unsubs: [] };
+const S = { user: null, resas: [], checks: [], files: [], expenses: [], vault: [], food: [], journal: [], wx: null, settings: {}, tab: "today", sub: null, filter: "todo", sync: { fromCache: true, pending: false }, unsubs: [] };
 
 function setSync(meta) {
   if (meta) S.sync = { ...S.sync, ...meta };
@@ -99,9 +102,10 @@ function startData() {
   S.unsubs.push(store().subscribe("resas", (items, m) => { if (items) S.resas = items; setSync(m); render(); }));
   S.unsubs.push(store().subscribe("checks", (items) => { if (items) S.checks = items; render(); }));
   S.unsubs.push(store().subscribe("expenses", (items) => { if (items) S.expenses = items; render(); }));
+  S.unsubs.push(store().subscribe("journal", (items) => { if (items) S.journal = items; render(); }));
   S.unsubs.push(store().subscribe("food", (items) => { if (items) S.food = items; render(); }));
   S.unsubs.push(store().subscribe("vault", (items) => { if (items) S.vault = items; render(); }));
-  S.unsubs.push(store().subscribe("settings", (items) => { if (items) S.settings = Object.fromEntries(items.map((i) => [i.id, i])); render(); refreshRates(); }));
+  S.unsubs.push(store().subscribe("settings", (items) => { if (items) S.settings = Object.fromEntries(items.map((i) => [i.id, i])); render(); refreshRates(); ensureWeather(); }));
   S.unsubs.push(store().subscribe("files", (items) => {
     if (!items) return;
     const fresh = items.filter((f) => !S.files.some((g) => g.id === f.id));
@@ -137,7 +141,7 @@ function renderLogin(msg = "") {
 /* ---------- squelette ---------- */
 function renderShell() {
   document.body.innerHTML = `
-  <header class="top"><h1 id="ttl">Asie, été 2027</h1><span id="sync" class="sync"></span></header>
+  <header class="top"><div class="ttlw"><h1 id="ttl">Asie, été 2027</h1><small id="clock" class="clock" hidden></small></div><span id="sync" class="sync"></span></header>
   <main id="view"></main>
   <button class="fab" id="fab" aria-label="Ajouter une réservation">+</button>
   <nav class="tabs">
@@ -159,7 +163,7 @@ function render() {
   document.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === S.tab));
   $("#fab").hidden = !["resas", "today", "money"].includes(S.tab);
   $("#fab").setAttribute("aria-label", S.tab === "money" ? "Ajouter une dépense" : "Ajouter une réservation");
-  setTint();
+  setTint(); tickClock();
   v.innerHTML = ({ today: viewToday, days: viewDays, resas: viewResas, money: viewMoney, more: viewMore })[S.tab]();
   bindView(v);
   setSync();
@@ -201,6 +205,7 @@ function stageBlock(st, iso) {
     <p class="kicker">${esc(c.name)}</p>
     <h2>${esc(st.name)}</h2>
     <p class="muted">${esc(fmt(st.from))} → ${esc(fmt(st.to))} · ${daysBetween(st.from, st.to)} ${daysBetween(st.from, st.to) > 1 ? "nuits" : "nuit"}</p>
+    ${wxLine(st)}
     <h3>À faire</h3><ul>${st.todo.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
     <h3>Où dormir</h3><p>${esc(st.sleep)}</p>
     ${hotels.length ? hotels.map(resaCard).join("") : ""}
@@ -220,6 +225,80 @@ function dayBlock(iso) {
     ${d[3] ? `<p>${esc(d[3])}</p>` : ""}
     <p class="muted">Nuit : ${esc(d[4])}</p>
   </section>`;
+}
+
+/* ---------- heure locale ---------- */
+const TZ = { hk: "Asia/Hong_Kong", cn: "Asia/Shanghai", vn: "Asia/Ho_Chi_Minh", kh: "Asia/Phnom_Penh", my: "Asia/Kuala_Lumpur" };
+function tickClock() {
+  const el = $("#clock"); if (!el) return;
+  const t = todayIso(), c = countryOn(t), tz = TZ[c];
+  if (t < TRIP.start || t > TRIP.end || !tz) { el.hidden = true; return; }
+  const h = (z) => new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: z });
+  el.hidden = false; el.textContent = `Ici ${h(tz)} · France ${h("Europe/Paris")}`;
+}
+setInterval(tickClock, 30000);
+
+/* ---------- météo ---------- */
+S.wx = cachedForecast();
+let climateBusy = false, wxBusy = false;
+const WX_STAGES = STAGES.filter((s) => s.id !== "kl1");
+async function ensureWeather() {
+  if (!navigator.onLine) return;
+  const t = todayIso();
+  if (!climateBusy && t <= TRIP.end) {
+    const have = S.settings.climate || {};
+    const missing = WX_STAGES.filter((st) => !have[st.id]);
+    if (missing.length) {
+      climateBusy = true; const got = {};
+      for (const st of missing) { try { const c = await fetchClimate(st); if (c) got[st.id] = c; } catch {} }
+      if (Object.keys(got).length) store().put("settings", "climate", got).catch(() => {});
+    }
+  }
+  if (!wxBusy && t <= TRIP.end) {
+    const end = isoOf(new Date(D(t).getTime() + 15 * 86400000));
+    const ids = STAGES.filter((st) => st.to > t && st.from <= end).map((st) => st.id);
+    if (ids.length) { wxBusy = true; try { const r = await fetchForecast(ids); if (r) { S.wx = r; render(); } } catch {} wxBusy = false; }
+  }
+}
+setInterval(ensureWeather, 3600e3);
+// services météo officiels du pays (pour les alertes et le détail)
+const WX_LOCAL = {
+  hk: [["Observatoire de Hong Kong", "https://www.hko.gov.hk/fr/myobservatory.htm"]],
+  cn: [["Météo chinoise officielle", "https://www.weather.com.cn"]],
+  vn: [["Météo vietnamienne officielle", "https://nchmf.gov.vn"]],
+  my: [["Météo malaisienne officielle", "https://www.met.gov.my"]],
+};
+const wxDay = (sid, iso) => S.wx?.data?.[sid]?.find((d) => d.date === iso);
+const deg = (v) => Math.round(v) + "°";
+function wxLine(st) {
+  const days = [];
+  for (let iso = st.from; iso <= st.to; iso = isoOf(new Date(D(iso).getTime() + 86400000))) { const d = wxDay(st.id, iso); if (d) days.push(d); }
+  if (days.length) return `<div class="wxchips">${days.map((d) => `<span class="wxchip"><small>${esc(fmt(d.date, { weekday: "short" }))}</small>${WMO(d.code)[0]} <b>${deg(d.max)}</b>/${deg(d.min)}${d.rain ? `<small>${d.rain} %</small>` : ""}</span>`).join("")}</div>`;
+  const c = S.settings.climate?.[st.id === "kl1" ? "kl2" : st.id];
+  if (c) return `<p class="wxnorm">🌡️ D'habitude à ces dates : <b>${c.max}°</b> / ${c.min}° · pluie ${c.wet < 20 ? "rare" : c.wet < 45 ? "1 jour sur 3" : c.wet < 65 ? "1 jour sur 2" : "presque tous les jours"}</p>`;
+  return "";
+}
+function wxCard(t) {
+  const days = [0, 1, 2, 3].map((k) => isoOf(new Date(D(t).getTime() + k * 86400000))).filter((iso) => iso <= TRIP.end);
+  const rows = days.map((iso) => { const st = stageOn(iso) || stageById[dayRow(iso)?.[1]]; const d = st && wxDay(st.id, iso); return d ? { iso, st, d } : null; }).filter(Boolean);
+  if (!rows.length) return "";
+  return `<section class="card wxcard"><div class="wxrow">${rows.map(({ iso, st, d }, i) => `<div class="wxd ${i ? "" : "today"}"><small>${i ? esc(fmt(iso, { weekday: "short" })) : "Auj."}</small><span class="wxe">${WMO(d.code)[0]}</span><b>${deg(d.max)}</b><small>${deg(d.min)}${d.rain ? ` · ${d.rain} %` : ""}</small>${i && st.id !== rows[i - 1].st.id ? `<small class="wxst">${esc(st.name.split(" (")[0])}</small>` : ""}</div>`).join("")}</div>
+    <p class="muted small">${esc(WMO(rows[0].d.code)[1])} · Open-Meteo, mis à jour à ${new Date(S.wx.at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} </p>
+    <div class="wxlinks">${(WX_LOCAL[countryOn(t)] || []).concat([["Alertes typhon (Observatoire de Hong Kong)", "https://www.hko.gov.hk/fr/myobservatory.htm"]]).filter((x, i, a) => a.findIndex((y) => y[1] === x[1]) === i).map(([n, u]) => `<a class="chip" href="${u}" target="_blank" rel="noopener">${esc(n)} ↗</a>`).join("")}</div></section>`;
+}
+
+/* ---------- y aller (Organic Maps / Plans) ---------- */
+function goBtn(q, label, sid) { return `<button class="play go" data-go-q="${esc(q)}" data-go-l="${esc(label || "")}" data-go-s="${esc(sid || "")}" aria-label="Y aller"><svg viewBox="0 0 24 24">${TOOL_ICONS.pin}</svg></button>`; }
+function openGo(q, label, sid) {
+  const c = LL[sid] || LL.hongkong, e = encodeURIComponent(q);
+  const ov = document.createElement("div"); ov.className = "goshow";
+  ov.innerHTML = `<div class="gobox"><p class="kicker">Y aller</p><p class="golbl">${esc(label || q)}</p>
+    <a class="btn primary wide" href="om://search?cll=${c[0]},${c[1]}&query=${e}">Ouvrir dans Organic Maps</a>
+    <a class="btn wide" href="https://maps.apple.com/?q=${e}&sll=${c[0]},${c[1]}" target="_blank" rel="noopener">Ouvrir dans Plans</a>
+    <button class="btn wide" data-gx>Fermer</button>
+    <p class="muted small">Organic Maps marche sans réseau si vous avez téléchargé la carte du pays. Pas encore installée ? <a href="https://organicmaps.app/fr/" target="_blank" rel="noopener">organicmaps.app</a></p></div>`;
+  ov.onclick = (ev) => { if (ev.target === ov || ev.target.closest("[data-gx]")) ov.remove(); };
+  document.body.appendChild(ov);
 }
 
 /* ---------- carte du parcours ---------- */
@@ -306,6 +385,7 @@ function viewToday() {
   const st = stageOn(t) || stageById[dayRow(t)?.[1]];
   const today = resasOn(t), tom = resasOn(tomorrow);
   return `${dayBlock(t)}
+    ${wxCard(t)}
     ${tripMap(t)}
     ${today.length ? `<h2 class="sect">Aujourd'hui</h2>${today.map(resaCard).join("")}` : ""}
     ${tom.length ? `<h2 class="sect">Demain</h2>${tom.map(resaCard).join("")}` : ""}
@@ -356,6 +436,8 @@ function viewPrep() {
 function bindView(v) {
   v.querySelectorAll("[data-resa]").forEach((b) => (b.onclick = () => openResa(S.resas.find((r) => r.id === b.dataset.resa))));
   v.querySelectorAll("[data-day]").forEach((b) => (b.onclick = () => openDay(b.dataset.day)));
+  v.querySelectorAll("[data-journal]").forEach((b) => (b.onclick = () => openJournal(b.dataset.journal)));
+  hydrateThumbs(v);
   v.querySelectorAll("[data-food]").forEach((c) => (c.onchange = () => store().put("food", c.dataset.food, { done: c.checked, by: S.user?.email || "" })));
   v.querySelectorAll("[data-stage]").forEach((b) => (b.onclick = () => openStage(b.dataset.stage)));
   bindShow(v); bindExtras(v);
@@ -379,7 +461,10 @@ function closeSheet() { const sh = $("#sheet"); sh.hidden = true; sh.innerHTML =
 function openDay(iso) {
   const st = stageById[dayRow(iso)?.[1]] || stageOn(iso);
   const sh = openSheet(`<div class="sheet-head"><h2>${esc(fmtLong(iso))}</h2><button class="x" data-close aria-label="Fermer">✕</button></div>
-    ${dayBlock(iso)}${resasOn(iso).map(resaCard).join("")}${stageBlock(st, iso)}`);
+    ${dayBlock(iso)}${resasOn(iso).map(resaCard).join("")}
+    ${stageBlock(st, iso)}`);
+  sh.querySelectorAll("[data-journal]").forEach((b) => (b.onclick = () => openJournal(b.dataset.journal)));
+  hydrateThumbs(sh);
   sh.querySelectorAll("[data-resa]").forEach((b) => (b.onclick = () => openResa(S.resas.find((r) => r.id === b.dataset.resa))));
   bindShow(sh);
 }
@@ -411,7 +496,7 @@ function openResa(r) {
       </div>
       <label>Adresse ou lieu<input name="place" value="${esc(r.place || "")}"></label>
       <label>Adresse en langue locale (à montrer au chauffeur)<textarea name="localAddr" rows="2" placeholder="Copiez ici l'adresse en chinois ou en vietnamien de la confirmation">${esc(r.localAddr || "")}</textarea></label>
-      ${r.localAddr ? `<button type="button" class="btn sm" id="showaddr">Afficher en grand</button>` : ""}
+      ${r.localAddr || r.place ? `<div class="btnrow">${r.localAddr ? `<button type="button" class="btn sm" id="showaddr">Afficher en grand</button>` : ""}<button type="button" class="btn sm" id="goaddr">📍 Y aller</button></div>` : ""}
       <label>Notes<textarea name="notes" rows="3">${esc(r.notes || "")}</textarea></label>
       <div class="files"><h3>Billets et documents</h3><div id="fl"></div>
         <label class="btn addfile">Ajouter un billet (photo, capture, PDF)<input type="file" id="fi" accept="image/*,application/pdf" multiple hidden></label>
@@ -447,6 +532,7 @@ function openResa(r) {
     if (!fs.textContent.startsWith("Impossible")) fs.textContent = navigator.onLine ? "" : "Hors ligne : le fichier sera envoyé à l'autre téléphone au retour du réseau.";
   };
   const collect = () => { const f = $("#rf", sh).elements; return { type: f.type.value, title: f.title.value.trim(), status: f.status.value, date: f.date.value, time: f.time.value, ref: f.ref.value.trim(), price: f.price.value.trim(), paid: parseFloat(String(f.paid.value).replace(",", ".").replace(/[^\d.]/g, "")) || null, paidBy: f.paidBy.value, place: f.place.value.trim(), localAddr: f.localAddr.value.trim(), notes: f.notes.value.trim() }; };
+  const ga = $("#goaddr", sh); if (ga) ga.onclick = () => openGo(r.localAddr || r.place, r.title, (stageOn(r.date) || {}).id);
   const sa = $("#showaddr", sh); if (sa) sa.onclick = () => showBig($("#rf", sh).elements.localAddr.value, $("#rf", sh).elements.title.value);
   $("#rf", sh).onsubmit = async (e) => { e.preventDefault(); store().put("resas", r.id, { ...collect(), files, by: S.user?.email || "" }); closeSheet(); };
   const del = $("#del", sh);
@@ -456,15 +542,15 @@ function openResa(r) {
 }
 
 // Images : réduites et compressées pour rester légères ; PDF : tels quels (4 Mo max)
-async function prepareFile(f) {
+async function prepareFile(f, max = 2000, q = 0.85) {
   if (f.type === "application/pdf") { if (f.size > 4e6) throw new Error("PDF trop lourd (4 Mo max) : faites plutôt une capture d'écran du billet."); return f; }
   if (!f.type.startsWith("image/")) throw new Error("Format non pris en charge");
   const img = await createImageBitmap(f).catch(() => null);
   if (!img) return f;
-  const max = 2000, k = Math.min(1, max / Math.max(img.width, img.height));
+  const k = Math.min(1, max / Math.max(img.width, img.height));
   const cv = Object.assign(document.createElement("canvas"), { width: Math.round(img.width * k), height: Math.round(img.height * k) });
   cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
-  const blob = await new Promise((res) => cv.toBlob(res, "image/jpeg", 0.85));
+  const blob = await new Promise((res) => cv.toBlob(res, "image/jpeg", q));
   return new File([blob], f.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" });
 }
 
@@ -497,11 +583,12 @@ function showList(st) {
   if (!items.length) return "";
   const lang = LANG_OF_COUNTRY[st.c] || "";
   return `<h3>À montrer au chauffeur</h3><div class="showlist">${items.map((i) =>
-    `<div class="showrow"><button class="showitem" data-show-loc="${esc(i.loc)}" data-show-fr="${esc(i.fr)}" data-show-lang="${lang}"><span class="loc">${esc(i.loc)}</span><small>${esc(i.fr)}</small></button>${lang ? playBtn(i.loc, lang) : ""}</div>`).join("")}</div>
-    <p class="muted small">Touchez pour afficher en grand. L'adresse de l'hôtel s'ajoute dans sa réservation.</p>`;
+    `<div class="showrow"><button class="showitem" data-show-loc="${esc(i.loc)}" data-show-fr="${esc(i.fr)}" data-show-lang="${lang}"><span class="loc">${esc(i.loc)}</span><small>${esc(i.fr)}</small></button>${lang ? playBtn(i.loc, lang) : ""}${goBtn(i.loc, i.fr, st.id)}</div>`).join("")}</div>
+    <p class="muted small">Touchez pour afficher en grand, 📍 pour l'itinéraire. L'adresse de l'hôtel s'ajoute dans sa réservation.</p>`;
 }
 function bindShow(el) {
   el.querySelectorAll("[data-show-loc]").forEach((b) => (b.onclick = () => showBig(b.dataset.showLoc, b.dataset.showFr, b.dataset.showLang)));
+  el.querySelectorAll("[data-go-q]").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openGo(b.dataset.goQ, b.dataset.goL, b.dataset.goS); }));
   el.querySelectorAll("[data-say]").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); speak(b.dataset.say, b.dataset.lang, b); }));
 }
 function showBig(loc, fr, lang) {
@@ -653,6 +740,9 @@ const TOOLS = [
   ["conv", "Convertisseur", "Devises hors ligne"],
   ["phrases", "Phrases de survie", "Chinois, vietnamien, khmer, malais"],
   ["food", "Spécialités à goûter", "À cocher étape par étape"],
+  ["remind", "Rappels", "Dans le calendrier de l'iPhone"],
+  ["tips", "Bons réflexes", "Pourboires, prix, pièges"],
+  ["stats", "Stats du voyage", "Kilomètres, trains, plats"],
   ["vault", "Documents et urgences", "Passeports, assurance, numéros"],
   ["prep", "Préparatifs", "Checklist avant le départ et sac"],
   ["settings", "Réglages", "Prénoms, budget, compte"],
@@ -660,7 +750,7 @@ const TOOLS = [
 function viewMore() {
   if (!S.sub) return `<h2 class="sect">Outils</h2><div class="tools">${TOOLS.map(([k, t, d]) => `<button class="card tool tool-${k}" data-sub="${k}"><span class="tico"><svg viewBox="0 0 24 24">${TOOL_ICONS[k]}</svg></span><strong>${t}</strong><small>${d}</small></button>`).join("")}</div>`;
   const back = `<button class="back" data-sub="">‹ Outils</button>`;
-  return back + ({ conv: viewConv, phrases: viewPhrases, food: viewFood, vault: viewVault, prep: viewPrep, settings: viewSettings })[S.sub]();
+  return back + ({ conv: viewConv, phrases: viewPhrases, food: viewFood, journal: viewJournal, remind: viewRemind, tips: viewTips, stats: viewStats, vault: viewVault, prep: viewPrep, settings: viewSettings })[S.sub]();
 }
 
 function viewConv() {
@@ -692,6 +782,117 @@ function viewFood() {
         <div class="ftxt"><strong>${esc(fr)}</strong><small>${esc(d)}</small>
         ${loc !== fr ? `<button class="floc" data-show-loc="${esc(loc)}" data-show-fr="${esc(fr)}" data-show-lang="${g.lang}">${esc(loc)}</button>` : ""}</div>
         ${playBtn(loc, g.lang)}</div>`; }).join("")}</details>`; }).join("")}`;
+}
+
+function viewTips() {
+  const cur = countryOn(todayIso());
+  return `<h2 class="sect">Bons réflexes</h2>${TIPS.map((g) => `<details class="card food tipc" style="--c:${COUNTRIES[g.c].color}" ${g.c === cur || (cur === "fr" && g.c === "hk") ? "open" : ""}>
+    <summary><strong>${esc(g.title)}</strong><span class="tipm">${MOTIFS[g.c] || ""}</span></summary>
+    ${g.sections.map(([h, t]) => `<div class="tipsec"><h3>${esc(h)}</h3><p>${esc(t)}</p></div>`).join("")}</details>`).join("")}
+    <h2 class="sect">Applis à installer</h2><div class="card list">${APPS.map(([n, d, u]) => `<a class="kv applink" href="${u}" target="_blank" rel="noopener"><span><b>${esc(n)}</b><small>${esc(d)}</small></span><span>↗</span></a>`).join("")}</div>
+    <p class="muted small pad">Prix indicatifs pour vous donner un ordre d'idée : ils bougent, mais un écart de 3 ou 4 fois doit vous alerter.</p>`;
+}
+
+function viewStats() {
+  const t = todayIso();
+  const sum = (arr) => arr.reduce((a, b) => a + b, 0);
+  const done = LEGS.filter((l) => l[3] < t || (l[3] === t && t > TRIP.start));
+  const kmAll = sum(LEGS.map(legKm)), kmDone = sum(done.map(legKm));
+  const cnt = (mode, arr = LEGS) => arr.filter((l) => l[2] === mode).length;
+  const nightsTrain = LEGS.filter((l) => l[4] && l[2] === "train");
+  const foodDone = (S.food || []).filter((f) => f.done).length, foodAll = FOODS.reduce((n, g) => n + g.items.length, 0);
+  const daysDone = t < TRIP.start ? 0 : Math.min(DAYS.length, daysBetween(TRIP.start, t) + 1);
+  const countries = new Set(DAYS.filter(([iso]) => iso <= t).map(([iso]) => countryOn(iso)).filter((c) => c !== "fr"));
+  const stagesDone = MAP_STAGES.filter((st) => st.from <= t).length;
+  const photos = sum((S.journal || []).map((j) => (j.photos || []).length));
+  const spent = sum(S.expenses.map((e) => e.eur || 0)) + sum(resaSpend().map((e) => e.eur));
+  const pre = t < TRIP.start;
+  const tile = (big, small, label, p) => `<div class="stat"><b>${big}</b>${small ? `<small>${small}</small>` : ""}<span>${label}</span>${p != null ? `<i style="--p:${p}"></i>` : ""}</div>`;
+  const fmtN = (n) => n.toLocaleString("fr-FR");
+  return `<h2 class="sect">Stats du voyage</h2>
+    <section class="card stats-hero"><p class="kicker">${pre ? "Ce qui vous attend" : "Depuis le départ"}</p>
+      <p class="big">${fmtN(pre ? kmAll : kmDone)} km</p><p class="muted small">${pre ? "en tout, dont" : `sur ${fmtN(kmAll)} km prévus, dont`} ${fmtN(sum(LEGS.filter((l) => l[2] !== "vol").map(legKm)))} km sans avion</p>
+      ${pre ? "" : `<i class="pbar" style="--p:${kmDone / kmAll}"></i>`}</section>
+    <div class="stats">
+      ${tile(pre ? DAYS.length : daysDone, pre ? "" : "/ " + DAYS.length, "jours", pre ? null : daysDone / DAYS.length)}
+      ${tile(pre ? 5 : countries.size, pre ? "" : "/ 5", "pays", pre ? null : countries.size / 5)}
+      ${tile(pre ? MAP_STAGES.length : stagesDone, pre ? "" : "/ " + MAP_STAGES.length, "étapes", pre ? null : stagesDone / MAP_STAGES.length)}
+      ${tile(pre ? cnt("train") : cnt("train", done), pre ? "" : "/ " + cnt("train"), "trains 🚄")}
+      ${tile(pre ? nightsTrain.length : nightsTrain.filter((l) => done.includes(l)).length, pre ? "" : "/ " + nightsTrain.length, "nuits en train 🛏️")}
+      ${tile(pre ? cnt("vol") : cnt("vol", done), pre ? "" : "/ " + cnt("vol"), "vols ✈️")}
+      ${tile(pre ? cnt("bateau") : cnt("bateau", done), pre ? "" : "/ " + cnt("bateau"), "bateaux ⛴️")}
+      ${tile(pre ? cnt("moto") + 1 : cnt("moto", done) + (t > "2027-07-28" ? 1 : 0), pre ? "" : "/ " + (cnt("moto") + 1), "jours de moto 🏍️")}
+      ${tile(foodDone, "/ " + foodAll, "plats goûtés 🍜", foodDone / foodAll)}
+      ${tile(money(Math.round(spent)), "", "dépensés à deux")}
+      ${tile(fmtN(Math.round(kmAll / 40075 * 100)) + " %", "", "du tour de la Terre 🌍")}
+    </div>
+    <p class="muted small pad">Distances approximatives : à vol d'oiseau pour l'avion, un peu plus par la route et le rail.</p>`;
+}
+
+function viewRemind() {
+  const base = location.href.replace(/[?#].*$/, "").replace(/[^/]*$/, "");
+  const https = base + "rappels.ics", webcal = https.replace(/^https?:/, "webcal:");
+  return `<h2 class="sect">Rappels dans le calendrier</h2>
+    <section class="card"><p>Ajoutez le calendrier <b>« Asie 2027 · rappels »</b> à votre iPhone : le jour où il faut réserver quelque chose, une alerte s'affiche à 9 h avec ce qu'il y a à faire et sur quels sites, même sans ouvrir l'appli.</p>
+      <a class="btn primary wide" href="${esc(webcal)}">S'abonner au calendrier</a>
+      <ol class="steps"><li>Touchez le bouton, puis <b>S'abonner</b>.</li><li>Sur l'écran suivant, <b>désactivez « Supprimer les alertes »</b>, sinon l'iPhone retire les rappels.</li><li>Touchez <b>Ajouter</b>. C'est tout : le calendrier se met à jour tout seul.</li></ol>
+      <p class="muted small">À faire sur les deux téléphones. Si une réservation est déjà faite, ignorez simplement son rappel.</p></section>
+    <h2 class="sect">Prochains rappels</h2><div class="card list">${upcomingReminders().map(([d, txt]) => `<div class="kv"><span>${esc(txt)}</span><b>${esc(fmt(d))}</b></div>`).join("") || `<p class="muted">Plus rien à venir.</p>`}</div>`;
+}
+function upcomingReminders() {
+  const t = todayIso();
+  return S.resas.filter((r) => r.status !== "reserve").map((r) => [bookingFor(r)?.from, r.title]).filter(([d]) => d && d >= t).sort((a, b) => a[0].localeCompare(b[0])).slice(0, 8);
+}
+
+/* ---------- carnet de voyage ---------- */
+const thumbCache = new Map();
+async function hydrateThumbs(el) {
+  for (const img of el.querySelectorAll("img[data-fid]")) {
+    const id = img.dataset.fid;
+    try {
+      if (!thumbCache.has(id)) thumbCache.set(id, URL.createObjectURL(await store().loadFile(id, S.files.find((f) => f.id === id))));
+      img.src = thumbCache.get(id); img.classList.add("ok");
+    } catch { img.alt = "Photo pas encore synchronisée"; }
+  }
+  el.querySelectorAll("img[data-fid]").forEach((img) => (img.onclick = () => viewFile(img.dataset.fid)));
+}
+const journalOn = (iso) => (S.journal || []).filter((j) => j.date === iso && (j.text || (j.photos || []).length)).sort((a, b) => (a.who || "").localeCompare(b.who || ""));
+function journalBlock(iso, withDate) {
+  const P = people(), items = journalOn(iso);
+  if (!items.length) return "";
+  return items.map((j) => `<div class="jentry">${withDate ? "" : ""}<p class="jwho">${esc(P[j.who] || "")}</p>${j.text ? `<p class="jtxt">${esc(j.text)}</p>` : ""}
+    ${(j.photos || []).length ? `<div class="jphotos">${j.photos.map((id) => `<img data-fid="${esc(id)}" alt="">`).join("")}</div>` : ""}</div>`).join("");
+}
+function viewJournal() {
+  const t = todayIso();
+  const days = [...new Set((S.journal || []).filter((j) => j.text || (j.photos || []).length).map((j) => j.date))].sort().reverse();
+  const canWrite = t >= TRIP.start && t <= TRIP.end;
+  return `<h2 class="sect">Carnet de voyage</h2>
+    <section class="card"><p>Chaque jour, une photo ou deux et quelques lignes, chacun de son côté. Le carnet est partagé entre vos deux téléphones.</p>
+      <button class="btn primary wide" data-journal="${canWrite ? t : TRIP.start}">${canWrite ? "Écrire la page d'aujourd'hui" : "Essayer (page du 27 juin)"}</button></section>
+    ${days.map((iso) => `<section class="card jday"><button class="jhead" data-journal="${iso}"><strong>${esc(fmtLong(iso))}</strong><small>${esc((stageOn(iso) || stageById[dayRow(iso)?.[1]] || {}).name || "")}</small></button>${journalBlock(iso)}</section>`).join("")
+      || `<p class="muted pad">Le carnet est encore vide. Il se remplira pendant le voyage ; chaque page est aussi accessible depuis le jour correspondant dans l'onglet Jours.</p>`}`;
+}
+function openJournal(iso) {
+  const who = me(), id = iso + "_" + who, P = people();
+  const j = (S.journal || []).find((x) => x.id === id) || { text: "", photos: [] };
+  let photos = [...(j.photos || [])];
+  const sh = openSheet(`<div class="sheet-head"><h2>${esc(fmtLong(iso))}</h2><button class="x" data-close aria-label="Fermer">✕</button></div>
+    <form id="jf" class="form">
+      <p class="muted small">Page de ${esc(P[who])} (le prénom se règle dans Outils › Réglages)</p>
+      <label>Ce qu'on retient de la journée<textarea name="text" rows="5" placeholder="Le meilleur moment, ce qu'on a mangé, une rencontre…">${esc(j.text || "")}</textarea></label>
+      <div class="jphotos edit" id="jp"></div>
+      <label class="btn addfile">Ajouter des photos<input type="file" id="jfi" accept="image/*" multiple hidden></label>
+      <p class="muted small" id="js"></p>
+      <div class="actions"><button class="btn primary" type="submit">Enregistrer</button></div>
+    </form>`);
+  const draw = () => { $("#jp", sh).innerHTML = photos.map((pid) => `<span class="jph"><img data-fid="${esc(pid)}" alt=""><button type="button" class="x sm" data-rm="${esc(pid)}" aria-label="Retirer">✕</button></span>`).join("");
+    hydrateThumbs($("#jp", sh)); $("#jp", sh).querySelectorAll("[data-rm]").forEach((b) => (b.onclick = () => { photos = photos.filter((x) => x !== b.dataset.rm); store().deleteFile(b.dataset.rm, S.files.find((f) => f.id === b.dataset.rm)).catch(() => {}); draw(); })); };
+  draw();
+  const save = () => store().put("journal", id, { date: iso, who, text: $("#jf", sh).elements.text.value.trim(), photos, by: S.user?.email || "" });
+  $("#jfi", sh).onchange = async (ev) => { const list = [...ev.target.files]; ev.target.value = ""; const st = $("#js", sh);
+    for (const f of list) { try { st.textContent = "Envoi de la photo…"; const pid = await store().saveFile(await prepareFile(f, 1600, 0.75)); photos.push(pid); draw(); await save(); st.textContent = ""; } catch (err) { st.textContent = err.message; } } };
+  $("#jf", sh).onsubmit = (e) => { e.preventDefault(); save(); closeSheet(); };
 }
 
 function viewVault() {

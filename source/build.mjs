@@ -6,3 +6,5 @@ await build({ entryPoints: ["src/app.js"], bundle: true, format: "esm", minify: 
 const v = Date.now().toString(36);
 writeFileSync("dist/sw.js", readFileSync("dist/sw.js", "utf8").replace("__VERSION__", v));
 console.log("build", v);
+const { buildIcs } = await import("./src/ics.js");
+writeFileSync("dist/rappels.ics", buildIcs("https://pauwelsletho-byte.github.io/voyage-asie-2027/"));

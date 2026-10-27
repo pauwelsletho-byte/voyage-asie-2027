@@ -279,3 +279,45 @@ body::after { content: ""; position: fixed; left: 0; right: 0; height: 110px; z-
 .fitem.done .ftxt strong { text-decoration: line-through; text-decoration-color: var(--c); opacity: .7; }
 .floc { margin-top: 6px; padding: 4px 10px; border-radius: 8px; background: color-mix(in srgb, var(--c) 12%, var(--card)); color: var(--c); font-weight: 700; font-size: 15px; }
 .foodline { font-size: 14px; color: var(--muted); }
+
+/* ---------- heure, météo, y aller, réflexes, stats, rappels ---------- */
+.ttlw { display: flex; flex-direction: column; min-width: 0; }
+.clock { font-size: 12px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.wxchips { display: flex; gap: 6px; overflow-x: auto; margin: 8px 0 4px; scrollbar-width: none; }
+.wxchips::-webkit-scrollbar { display: none; }
+.wxchip { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 999px; background: var(--soft); font-size: 13px; }
+.wxchip small { color: var(--muted); font-size: 11px; }
+.wxnorm { font-size: 14px; margin: 6px 0; }
+.wxcard .wxrow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
+.wxd { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border-radius: 12px; }
+.wxd.today { background: color-mix(in srgb, var(--sunny) 22%, var(--card)); }
+.wxd small { font-size: 12px; color: var(--muted); } .wxd b { font-size: 18px; } .wxe { font-size: 28px; line-height: 1.1; }
+.wxd .wxst { color: var(--accent); font-weight: 600; font-size: 11px; }
+.wxcard p { margin: 10px 0 0; }
+.wxlinks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.wxlinks .chip { background: var(--soft); text-decoration: none; color: var(--accent); font-size: 12px; }
+.play.go svg { fill: var(--accent2); }
+.showrow { grid-template-columns: 1fr auto auto; }
+.btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+.goshow { position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,.4); display: flex; align-items: flex-end; }
+.gobox { background: var(--card); width: 100%; border-radius: 20px 20px 0 0; padding: 20px 20px calc(20px + env(safe-area-inset-bottom)); display: grid; gap: 10px; }
+.gobox .golbl { font-size: 18px; font-weight: 700; margin: 0 0 4px; } .gobox .kicker { margin: 0; }
+.gobox a.btn { text-align: center; text-decoration: none; }
+.tipc summary { min-height: 34px; }
+.tipm { width: 34px; height: 34px; color: var(--c); opacity: .5; } .tipm svg { width: 100%; height: 100%; }
+.tipsec { border-top: 1px solid var(--line); padding: 10px 0 4px; } .food summary + .tipsec { margin-top: 10px; }
+.tipsec h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--c); margin: 0 0 4px; }
+.tipsec p { margin: 0; font-size: 15px; }
+.applink { text-decoration: none; color: inherit; } .applink small { display: block; color: var(--muted); font-size: 13px; font-weight: 400; }
+.stats-hero .big { margin: 2px 0; }
+.pbar { display: block; height: 8px; border-radius: 99px; background: var(--soft); position: relative; overflow: hidden; margin-top: 10px; }
+.pbar::after, .stat i::after { content: ""; position: absolute; inset: 0; width: calc(var(--p) * 100%); background: var(--accent); border-radius: 99px; }
+.stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.stat { background: var(--card); border-radius: 16px; padding: 12px 14px; box-shadow: var(--shadow); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px; }
+.stat b { font-size: 24px; font-weight: 800; } .stat small { color: var(--muted); } .stat span { flex-basis: 100%; font-size: 13px; color: var(--muted); }
+.stat i { flex-basis: 100%; height: 5px; border-radius: 99px; background: var(--soft); position: relative; overflow: hidden; margin-top: 4px; }
+.steps { padding-left: 20px; } .steps li { margin: 6px 0; }
+.tool-tips { --tc: #B5810F; } .tool-stats { --tc: #1C7489; } .tool-remind { --tc: #F0775A; } .tool-journal { --tc: #7B4E9C; }
+a.btn { text-decoration: none; color: inherit; display: block; text-align: center; }
+a.btn.primary { color: #fff; }
+.stats-hero .big { font-size: 36px; font-weight: 800; letter-spacing: -0.02em; }
