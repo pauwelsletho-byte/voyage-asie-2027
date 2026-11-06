@@ -6,7 +6,7 @@ import { MAP_W, MAP_H, LAND, VISITED, PTS, LL } from "./mapdata.js";
 import { TIPS, APPS } from "./tips.js";
 import { pdfText, parseConfirmation } from "./pdfread.js";
 import { LEGS, legKm } from "./stats.js";
-import { WMO, cachedForecast, fetchForecast, fetchClimateAll, cachedClimate } from "./weather.js";
+import { WMO, cachedForecast, fetchForecast, fetchClimateAll, cachedClimate, cachedAlerts, fetchAlerts, kmBetween } from "./weather.js";
 import { bookingFor as bkByTitle, bookingPeriod } from "./booking.js";
 // retrouve les infos même si le titre a été modifié (fiches créées au départ)
 const bookingFor = (r) => bkByTitle(r) || (r && String(r.id).startsWith("seed-") ? bkByTitle({ title: SEED_RESAS[+String(r.id).slice(5, 7)]?.[1] }) : null);
@@ -240,7 +240,7 @@ function tickClock() {
 setInterval(tickClock, 30000);
 
 /* ---------- météo ---------- */
-S.wx = cachedForecast();
+S.wx = cachedForecast(); S.alerts = cachedAlerts();
 let climateBusy = false, wxBusy = false;
 const WX_STAGES = STAGES.filter((s) => s.id !== "kl1");
 let wxErr = "";
@@ -259,8 +259,9 @@ async function ensureWeather(force) {
   if ((!wxBusy || force) && t <= TRIP.end) {
     const end = isoOf(new Date(D(t).getTime() + 15 * 86400000));
     const ids = STAGES.filter((st) => st.to > t && st.from <= end).map((st) => st.id);
-    if (ids.length) { wxBusy = true; try { const r = await fetchForecast(ids); if (r) { S.wx = r; render(); } } catch (e) { wxErr = "Prévisions indisponibles (" + e.message + ")."; } wxBusy = false; }
+    if (ids.length) { wxBusy = true; try { const r = await fetchForecast(ids, force); if (r) { S.wx = r; render(); } } catch (e) { wxErr = "Prévisions indisponibles (" + e.message + ")."; } wxBusy = false; }
   }
+  try { const a = await fetchAlerts(); if (a && a.at !== S.alerts?.at) { S.alerts = a; render(); } } catch {}
 }
 setInterval(ensureWeather, 3600e3);
 // services météo officiels du pays (pour les alertes et le détail)
@@ -281,9 +282,66 @@ function wxLine(st) {
   return "";
 }
 const wxIcon = (c) => (c.wet < 20 ? "☀️" : c.wet < 45 ? "🌤️" : "🌦️");
+// Alertes : cyclones proches du parcours, avis de Hong Kong, vent et pluies fortes prévus
+const HKO_FR = { TC1: "Signal typhon n° 1 (cyclone à moins de 800 km)", TC3: "Signal typhon n° 3 (vents forts)", TC8NE: "Signal typhon n° 8 (tempête)", TC8SE: "Signal typhon n° 8 (tempête)", TC8NW: "Signal typhon n° 8 (tempête)", TC8SW: "Signal typhon n° 8 (tempête)", TC9: "Signal typhon n° 9 (tempête qui s'intensifie)", TC10: "Signal typhon n° 10 (ouragan)",
+  WRAINA: "Pluies torrentielles (orange)", WRAINR: "Pluies torrentielles (rouge)", WRAINB: "Pluies torrentielles (noir)", WTS: "Orages", WHOT: "Très chaud", WMSGNL: "Mousson forte", WL: "Glissements de terrain", WTMW: "Tsunami" };
+function alertsList(t) {
+  const out = [], A = S.alerts, inTrip = t >= TRIP.start && t <= TRIP.end;
+  const soon = inTrip ? STAGES.filter((st) => st.to > t && st.from <= isoOf(new Date(D(t).getTime() + 7 * 86400000))) : WX_STAGES;
+  (A?.cyclones || []).forEach((c) => {
+    let best = null; soon.forEach((st) => { const d = kmBetween([c.lat, c.lon], LL[st.id]); if (!best || d < best.d) best = { d, st }; });
+    if (!best) return;
+    const lvl = inTrip ? (best.d < 500 || c.level === "Red" ? "red" : best.d < 1000 || c.level === "Orange" ? "orange" : "info") : "info";
+    if (inTrip && best.d > 1800) return;
+    out.push({ lvl, icon: "🌀", title: `${c.kind.split(" (")[0].replace("Tropical Depression", "Dépression tropicale").replace("Tropical Storm", "Tempête tropicale").replace("Hurricane/Typhoon > 74 mph", "Typhon").replace("Remnant Low", "Dépression résiduelle")} ${c.name}`,
+      text: `Vents jusqu'à ${c.wind} km/h, à environ ${best.d.toLocaleString("fr-FR")} km de ${best.st.name.split(" (")[0]}${inTrip ? "" : " (en ce moment, pas pendant votre voyage)"}.`, url: c.url, src: "GDACS" });
+  });
+  const hkSoon = inTrip && soon.some((st) => st.id === "hongkong");
+  if (hkSoon) (A?.hko || []).forEach((w) => out.push({ lvl: /^TC(8|9|10)|WRAINR|WRAINB/.test(w.code) ? "red" : /^TC|WRAIN/.test(w.code) ? "orange" : "info", icon: "🇭🇰", title: HKO_FR[w.code] || w.name, text: "Avis en cours de l'Observatoire de Hong Kong.", url: "https://www.hko.gov.hk/fr/myobservatory.htm", src: "HKO" }));
+  if (inTrip) [0, 1, 2].forEach((k) => {
+    const iso = isoOf(new Date(D(t).getTime() + k * 86400000)), st = stageOn(iso) || stageById[dayRow(iso)?.[1]], d = st && wxDay(st.id, iso);
+    if (!d) return; const when = k === 0 ? "aujourd'hui" : k === 1 ? "demain" : fmt(iso, { weekday: "long" });
+    if (d.gust >= 70) out.push({ lvl: d.gust >= 90 ? "red" : "orange", icon: "💨", title: `Rafales à ${Math.round(d.gust)} km/h ${when}`, text: `À ${st.name.split(" (")[0]} : prudence à moto et en bateau.`, wx: `${st.id}|${iso}` });
+    if (d.mm >= 40) out.push({ lvl: d.mm >= 80 ? "red" : "orange", icon: "🌧️", title: `Fortes pluies ${when} (${Math.round(d.mm)} mm)`, text: `À ${st.name.split(" (")[0]} : routes et sentiers glissants, risque d'inondations.`, wx: `${st.id}|${iso}` });
+  });
+  const rank = { red: 0, orange: 1, info: 2 };
+  return out.sort((a, b) => rank[a.lvl] - rank[b.lvl]);
+}
+function alertCards(list) {
+  return list.map((a) => `<div class="card alert ${a.lvl}"><span class="aico">${a.icon}</span><div><b>${esc(a.title)}</b><p>${esc(a.text)}</p>
+    ${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">Voir la trajectoire (${esc(a.src)}) ↗</a>` : a.wx ? `<button class="link" data-wxday="${esc(a.wx)}">Voir le détail heure par heure</button>` : ""}</div></div>`).join("");
+}
+function homeAlerts(t) { const l = alertsList(t).filter((a) => a.lvl !== "info"); return l.length ? alertCards(l) : ""; }
+
 function viewMeteo() {
-  const t = todayIso(), now = t >= TRIP.start && t <= TRIP.end ? wxCard(t) : "";
-  return `${now ? `<h2 class="sect">Prochains jours</h2>${now}` : ""}${climateCard()}`;
+  const t = todayIso(), al = alertsList(t), A = S.alerts;
+  const upcoming = STAGES.filter((st) => S.wx?.data?.[st.id] && st.to > t);
+  const rows = [];
+  upcoming.forEach((st) => (S.wx.data[st.id] || []).forEach((d) => { if (d.date >= t && d.date >= st.from && d.date < st.to && !rows.some((r) => r.d.date === d.date)) rows.push({ st, d }); }));
+  return `<h2 class="sect">Alertes typhon et intempéries</h2>
+    ${al.length ? alertCards(al) : `<div class="card alert ok"><span class="aico">✅</span><div><b>Rien à signaler</b><p>${A ? "Aucun cyclone actif dans la région" + (t >= TRIP.start ? " près de votre parcours" : "") + "." : "Vérification en cours…"}</p></div></div>`}
+    <p class="muted small pad">${A ? `Vérifié à ${new Date(A.at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · cyclones : GDACS (ONU et Commission européenne) · Hong Kong : Observatoire (HKO)` : ""}. Pendant le voyage, les alertes importantes s'affichent aussi sur l'accueil. <a href="https://www.hko.gov.hk/fr/myobservatory.htm" target="_blank" rel="noopener">MyObservatory ↗</a></p>
+    <h2 class="sect">Prévisions détaillées</h2>
+    ${rows.length ? `<div class="card list">${rows.map(({ st, d }) => `<button class="wxrowd" data-wxday="${st.id}|${d.date}"><span class="wxdd">${esc(fmt(d.date, { weekday: "short", day: "numeric", month: "short" }))}<small>${esc(st.name.split(" (")[0])}</small></span><span class="wxe">${WMO(d.code)[0]}</span><span class="wxt"><b>${deg(d.max)}</b> ${deg(d.min)}</span><span class="wxr">${d.rain ?? 0} %<small>${d.mm != null ? Math.round(d.mm) + " mm" : ""}</small></span><span class="chev">›</span></button>`).join("")}</div>
+      <p class="muted small pad">Touchez un jour pour le détail heure par heure (7 premiers jours). <button class="link" data-wxretry>Actualiser</button></p>`
+    : `<div class="card"><p class="muted">Les prévisions jour par jour arrivent 16 jours avant chaque étape (à partir de mi-juin 2027 pour Hong Kong). En attendant, voici le temps habituel.</p></div>`}
+    ${climateCard()}`;
+}
+function openWxDay(sid, iso) {
+  const st = stageById[sid], d = wxDay(sid, iso); if (!st || !d) return;
+  const hours = (d.hours || []).filter((h, i) => i % 2 === 0 || d.hours.length < 13);
+  const sh = openSheet(`<div class="sheet-head"><h2>${esc(fmtLong(iso))}</h2><button class="x" data-close aria-label="Fermer">✕</button></div>
+    <section class="card wxsum"><p class="kicker">${esc(st.name)}</p><div class="wxbig"><span class="wxe">${WMO(d.code)[0]}</span><b>${deg(d.max)}</b><span>${deg(d.min)}</span></div><p>${esc(WMO(d.code)[1])}</p>
+      <div class="kvgrid">
+        <div><small>Ressenti</small><b>${d.feel != null ? deg(d.feel) : "—"}</b></div>
+        <div><small>Pluie</small><b>${d.rain ?? 0} % · ${d.mm != null ? Math.round(d.mm * 10) / 10 + " mm" : "—"}</b></div>
+        <div><small>Vent / rafales</small><b>${d.wind != null ? Math.round(d.wind) : "—"} / ${d.gust != null ? Math.round(d.gust) : "—"} km/h</b></div>
+        <div><small>UV max</small><b>${d.uv != null ? Math.round(d.uv) + (d.uv >= 8 ? " (très fort)" : d.uv >= 6 ? " (fort)" : "") : "—"}</b></div>
+        <div><small>Lever / coucher</small><b>${esc(d.sunrise || "—")} / ${esc(d.sunset || "—")}</b></div>
+      </div></section>
+    ${hours.length ? `<h2 class="sect">Heure par heure</h2><div class="card hours">${hours.map((h) => `<div class="hrow"><span class="hh">${esc(h.h)}</span><span class="wxe">${WMO(h.code)[0]}</span><b>${deg(h.temp)}</b><span class="hp">${h.pp ?? 0} %${h.mm ? ` · ${Math.round(h.mm * 10) / 10} mm` : ""}</span><span class="hw">💨 ${Math.round(h.wind || 0)}${h.gust >= 50 ? `<small> (${Math.round(h.gust)})</small>` : ""}</span></div>`).join("")}</div>`
+      : `<p class="muted pad">Le détail heure par heure est disponible pour les 7 prochains jours.</p>`}
+    <p class="muted small pad">Open-Meteo · mis à jour à ${new Date(S.wx.at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</p>`);
 }
 function climateCard() {
   const c = climate();
@@ -298,7 +356,7 @@ function wxCard(t) {
   const days = [0, 1, 2, 3].map((k) => isoOf(new Date(D(t).getTime() + k * 86400000))).filter((iso) => iso <= TRIP.end);
   const rows = days.map((iso) => { const st = stageOn(iso) || stageById[dayRow(iso)?.[1]]; const d = st && wxDay(st.id, iso); return d ? { iso, st, d } : null; }).filter(Boolean);
   if (!rows.length) return "";
-  return `<section class="card wxcard"><div class="wxrow">${rows.map(({ iso, st, d }, i) => `<div class="wxd ${i ? "" : "today"}"><small>${i ? esc(fmt(iso, { weekday: "short" })) : "Auj."}</small><span class="wxe">${WMO(d.code)[0]}</span><b>${deg(d.max)}</b><small>${deg(d.min)}${d.rain ? ` · ${d.rain} %` : ""}</small>${i && st.id !== rows[i - 1].st.id ? `<small class="wxst">${esc(st.name.split(" (")[0])}</small>` : ""}</div>`).join("")}</div>
+  return `<section class="card wxcard"><div class="wxrow">${rows.map(({ iso, st, d }, i) => `<div class="wxd ${i ? "" : "today"}" data-wxday="${st.id}|${iso}" role="button"><small>${i ? esc(fmt(iso, { weekday: "short" })) : "Auj."}</small><span class="wxe">${WMO(d.code)[0]}</span><b>${deg(d.max)}</b><small>${deg(d.min)}${d.rain ? ` · ${d.rain} %` : ""}</small>${i && st.id !== rows[i - 1].st.id ? `<small class="wxst">${esc(st.name.split(" (")[0])}</small>` : ""}</div>`).join("")}</div>
     <p class="muted small">${esc(WMO(rows[0].d.code)[1])} · Open-Meteo, mis à jour à ${new Date(S.wx.at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} </p>
     <div class="wxlinks">${(WX_LOCAL[countryOn(t)] || []).concat([["Alertes typhon (Observatoire de Hong Kong)", "https://www.hko.gov.hk/fr/myobservatory.htm"]]).filter((x, i, a) => a.findIndex((y) => y[1] === x[1]) === i).map(([n, u]) => `<a class="chip" href="${u}" target="_blank" rel="noopener">${esc(n)} ↗</a>`).join("")}</div></section>`;
 }
@@ -447,7 +505,7 @@ function viewToday() {
   const tomorrow = isoOf(new Date(D(t).getTime() + 86400000));
   const st = stageOn(t) || stageById[dayRow(t)?.[1]];
   const today = resasOn(t), tom = resasOn(tomorrow);
-  return `${dayBlock(t)}
+  return `${homeAlerts(t)}${dayBlock(t)}
     ${wxCard(t)}
     ${tripMap(t)}
     ${today.length ? `<h2 class="sect">Aujourd'hui</h2>${today.map(resaCard).join("")}` : ""}
@@ -529,6 +587,7 @@ function viewPrep() {
 function bindView(v) {
   v.querySelectorAll("[data-resa]").forEach((b) => (b.onclick = () => openResa(S.resas.find((r) => r.id === b.dataset.resa))));
   v.querySelectorAll("[data-day]").forEach((b) => (b.onclick = () => openDay(b.dataset.day)));
+  v.querySelectorAll("[data-wxday]").forEach((b) => (b.onclick = () => { const [sid, iso] = b.dataset.wxday.split("|"); openWxDay(sid, iso); }));
   v.querySelectorAll("[data-wxretry]").forEach((b) => (b.onclick = () => { b.textContent = "Chargement…"; ensureWeather(true); }));
   const phq = $("#phq", v); if (phq) phq.oninput = () => { const q = phq.value.trim().toLowerCase();
     v.querySelectorAll(".phr").forEach((d) => { let n = 0;
