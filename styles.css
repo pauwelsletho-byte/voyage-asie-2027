@@ -346,3 +346,13 @@ input.filled, textarea.filled { border-color: var(--accent); background: color-m
 .tool-meteo { --tc: #2B8597; }
 .stnum { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--c); color: #fff; font-size: 11px; font-weight: 800; margin-right: 6px; vertical-align: 1px; letter-spacing: 0; text-transform: none; }
 .stnum.big { width: 30px; height: 30px; font-size: 15px; margin-right: 10px; vertical-align: 3px; }
+#phq { margin: 0 0 8px; }
+.phsec { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); margin: 14px 0 2px; }
+.phrow[hidden], .phsec[hidden], .phr[hidden] { display: none; }
+/* zoom de la carte */
+.mapwrap { position: relative; }
+.tripmap { touch-action: pan-y; -webkit-user-select: none; user-select: none; }
+.tripmap.zoomed { touch-action: none; }
+.mapbtns { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.mapbtns button { width: 36px; height: 36px; border-radius: 10px; background: color-mix(in srgb, var(--card) 92%, transparent); box-shadow: 0 2px 8px rgba(0,0,0,.15); font-size: 20px; font-weight: 700; text-align: center; color: var(--ink); }
+.tripmap .seg, .tripmap .land { vector-effect: non-scaling-stroke; }

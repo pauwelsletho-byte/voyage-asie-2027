@@ -346,26 +346,72 @@ function tripMap(t) {
   const dots = MAP_STAGES.map((st, i) => {
     const [x, y] = PTS[st.id], c = COUNTRIES[st.c].color, past = st.to <= t, cur = pos?.st && (pos.st.id === st.id || (pos.st.id === "kl1" && st.id === "kl2"));
     const L = LABELS[st.id];
-    return `<g class="mdot ${past ? "past" : ""} ${cur ? "cur" : ""}" data-stage="${st.id}" style="--c:${c}" role="button" aria-label="${esc(st.name)}">
+    return `<g class="mdot ${past ? "past" : ""} ${cur ? "cur" : ""}" data-stage="${st.id}" data-x="${x}" data-y="${y}" style="--c:${c}" role="button" aria-label="${esc(st.name)}">
       <circle cx="${x}" cy="${y}" r="16" class="hit"/><circle cx="${x}" cy="${y}" r="8.5" class="pin"/>
       <text x="${x}" y="${y + 3.2}" class="num">${i + 1}</text>
       ${L ? `<text x="${x + L[1]}" y="${y + L[2]}" class="lbl" text-anchor="${L[3] || "start"}">${esc(L[0])}</text>` : ""}</g>`;
   }).join("");
-  const me = pos ? `<g class="me"><circle cx="${pos.p[0]}" cy="${pos.p[1]}" r="14" class="halo"/><circle cx="${pos.p[0]}" cy="${pos.p[1]}" r="5"/></g>` : "";
+  const me = pos ? `<g class="me mdot-like" data-x="${pos.p[0]}" data-y="${pos.p[1]}"><circle cx="${pos.p[0]}" cy="${pos.p[1]}" r="14" class="halo"/><circle cx="${pos.p[0]}" cy="${pos.p[1]}" r="5"/></g>` : "";
   const caption = pos ? (pos.st ? `Vous êtes à <b>${esc(pos.st.name)}</b>` : "En route vers la prochaine étape")
     : t < TRIP.start ? `${MAP_STAGES.length} étapes, ${daysBetween(TRIP.start, TRIP.end)} jours` : "Le voyage est terminé";
+  const vb = S.mapVB || [0, 0, MAP_W, MAP_H];
   return `<section class="card mapcard">
-    <svg viewBox="0 0 ${MAP_W} ${MAP_H}" class="tripmap" aria-label="Carte du parcours">
+    <div class="mapwrap"><svg viewBox="${vb.join(" ")}" class="tripmap ${vb[2] < MAP_W ? "zoomed" : ""}" aria-label="Carte du parcours">
       <rect width="${MAP_W}" height="${MAP_H}" class="sea"/>
       <path d="${LAND}" class="land"/>
       ${Object.entries(VISITED).map(([k, d]) => `<path d="${d}" class="land v" style="--c:${COUNTRIES[k].color}"/>`).join("")}
       ${segs.join("")}${dots}${me}
     </svg>
-    <p class="mapcap">${caption}<span class="muted"> · touchez une étape</span></p>
+    <div class="mapbtns"><button data-mz="in" aria-label="Zoomer">+</button><button data-mz="out" aria-label="Dézoomer">−</button><button data-mz="reset" aria-label="Vue entière">⤢</button></div></div>
+    <p class="mapcap">${caption}<span class="muted"> · pincez pour zoomer, touchez une étape</span></p>
     <div class="mapchips">${MAP_STAGES.map((st, i) => `<button class="chip" data-stage="${st.id}" style="--c:${COUNTRIES[st.c].color}"><i>${i + 1}</i>${esc(st.name.replace(" (nuit tampon)", ""))}</button>`).join("")}</div>
   </section>`;
 }
 function stageNum(id) { const i = MAP_STAGES.findIndex((x) => x.id === (id === "kl1" ? "kl2" : id)); return i + 1; }
+// Zoom de la carte : pincer à deux doigts, glisser à un doigt une fois zoomé, boutons + / −
+function bindMap(v) {
+  const svg = v.querySelector(".tripmap"); if (!svg) return;
+  const full = [0, 0, MAP_W, MAP_H];
+  let vb = [...(S.mapVB || full)], moved = false, g = null;
+  const clamp = (b) => { let [x, y, w] = b; w = Math.max(MAP_W / 6, Math.min(MAP_W, w)); const h = (w * MAP_H) / MAP_W;
+    x = Math.max(0, Math.min(MAP_W - w, x)); y = Math.max(0, Math.min(MAP_H - h, y)); return [x, y, w, h]; };
+  const marks = svg.querySelectorAll("[data-x]");
+  const apply = (b) => { vb = clamp(b); S.mapVB = vb[2] >= MAP_W - 0.5 ? null : vb; svg.setAttribute("viewBox", vb.join(" ")); svg.classList.toggle("zoomed", !!S.mapVB);
+    const k = Math.pow(vb[2] / MAP_W, 0.75); // les points grossissent un peu en zoomant, mais pas autant que la carte
+    marks.forEach((m) => { const x = +m.dataset.x, y = +m.dataset.y; m.setAttribute("transform", k > 0.99 ? "" : `translate(${x} ${y}) scale(${k}) translate(${-x} ${-y})`); }); };
+  apply(vb);
+  const toSvg = (cx, cy, b = vb) => { const r = svg.getBoundingClientRect(); return [b[0] + ((cx - r.left) / r.width) * b[2], b[1] + ((cy - r.top) / r.height) * b[3]]; };
+  const zoomAt = (k, px, py) => { const w = vb[2] / k, h = (w * MAP_H) / MAP_W; apply([px - ((px - vb[0]) / vb[2]) * w, py - ((py - vb[1]) / vb[3]) * h, w, h]); };
+  const mid = (t) => [(t[0].clientX + t[1].clientX) / 2, (t[0].clientY + t[1].clientY) / 2];
+  const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  svg.addEventListener("touchstart", (e) => {
+    moved = false;
+    if (e.touches.length === 2) { const m = mid(e.touches); g = { type: "pinch", d0: dist(e.touches), vb0: [...vb], p0: toSvg(m[0], m[1]) }; e.preventDefault(); }
+    else if (e.touches.length === 1 && S.mapVB) g = { type: "pan", x0: e.touches[0].clientX, y0: e.touches[0].clientY, vb0: [...vb] };
+    else g = null;
+  }, { passive: false });
+  svg.addEventListener("touchmove", (e) => {
+    if (!g) return;
+    const r = svg.getBoundingClientRect();
+    if (g.type === "pinch" && e.touches.length === 2) {
+      e.preventDefault(); moved = true;
+      const w = g.vb0[2] * (g.d0 / dist(e.touches)), h = (w * MAP_H) / MAP_W, m = mid(e.touches);
+      apply([g.p0[0] - ((m[0] - r.left) / r.width) * w, g.p0[1] - ((m[1] - r.top) / r.height) * h, w, h]);
+    } else if (g.type === "pan" && e.touches.length === 1) {
+      const dx = e.touches[0].clientX - g.x0, dy = e.touches[0].clientY - g.y0;
+      if (Math.hypot(dx, dy) > 6) moved = true;
+      if (moved) { e.preventDefault(); apply([g.vb0[0] - (dx / r.width) * g.vb0[2], g.vb0[1] - (dy / r.height) * g.vb0[3], g.vb0[2], g.vb0[3]]); }
+    }
+  }, { passive: false });
+  svg.addEventListener("touchend", (e) => { if (e.touches.length === 0) g = null; });
+  svg.addEventListener("gesturestart", (e) => e.preventDefault());
+  svg.addEventListener("click", (e) => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+  svg.addEventListener("dblclick", (e) => { const p = toSvg(e.clientX, e.clientY); zoomAt(2, p[0], p[1]); });
+  v.querySelectorAll("[data-mz]").forEach((b) => (b.onclick = () => {
+    const c = [vb[0] + vb[2] / 2, vb[1] + vb[3] / 2];
+    if (b.dataset.mz === "reset") apply(full); else zoomAt(b.dataset.mz === "in" ? 1.8 : 1 / 1.8, c[0], c[1]);
+  }));
+}
 function openStage(id) {
   const st = stageById[id]; if (!st) return;
   const days = DAYS.filter(([iso, sid]) => (sid || (stageOn(iso) || {}).id) === id);
@@ -484,11 +530,17 @@ function bindView(v) {
   v.querySelectorAll("[data-resa]").forEach((b) => (b.onclick = () => openResa(S.resas.find((r) => r.id === b.dataset.resa))));
   v.querySelectorAll("[data-day]").forEach((b) => (b.onclick = () => openDay(b.dataset.day)));
   v.querySelectorAll("[data-wxretry]").forEach((b) => (b.onclick = () => { b.textContent = "Chargement…"; ensureWeather(true); }));
+  const phq = $("#phq", v); if (phq) phq.oninput = () => { const q = phq.value.trim().toLowerCase();
+    v.querySelectorAll(".phr").forEach((d) => { let n = 0;
+      d.querySelectorAll(".phrow").forEach((r) => { const ok = !q || r.dataset.q.includes(q); r.hidden = !ok; if (ok) n++; });
+      d.querySelectorAll(".phsec").forEach((h) => (h.hidden = !!q));
+      if (q) { d.open = n > 0; d.hidden = n === 0; } else d.hidden = false; }); };
   v.querySelectorAll("[data-paste]").forEach((b) => (b.onclick = openPaste));
   v.querySelectorAll("[data-journal]").forEach((b) => (b.onclick = () => openJournal(b.dataset.journal)));
   hydrateThumbs(v);
   v.querySelectorAll("[data-food]").forEach((c) => (c.onchange = () => store().put("food", c.dataset.food, { done: c.checked, by: S.user?.email || "" })));
   v.querySelectorAll("[data-stage]").forEach((b) => (b.onclick = () => openStage(b.dataset.stage)));
+  bindMap(v);
   bindShow(v); bindExtras(v);
   v.querySelectorAll("[data-filter]").forEach((b) => (b.onclick = () => { S.filter = b.dataset.filter; render(); }));
   v.querySelectorAll("[data-go]").forEach((b) => (b.onclick = () => { S.tab = b.dataset.go; render(); }));
@@ -832,9 +884,14 @@ function viewConv() {
 }
 
 function viewPhrases() {
-  return `<h2 class="sect">Phrases de survie</h2>${PHRASES.map((g) => `<details class="card phr" ${g.where === COUNTRIES[countryOn(todayIso())]?.name ? "open" : ""}><summary><strong>${esc(g.lang)}</strong> <small>${esc(g.where)}</small></summary>
-    ${g.rows.map(([fr, loc, ph]) => `<div class="phrow"><button class="phrase" data-show-loc="${esc(loc)}" data-show-fr="${esc(fr + " · " + ph)}" data-show-lang="${LANG_OF_GROUP[g.lang]}"><span>${esc(fr)}</span><span class="loc">${esc(loc)}</span><small>${esc(ph)}</small></button>${playBtn(loc, LANG_OF_GROUP[g.lang])}</div>`).join("")}</details>`).join("")}
-    <p class="muted small pad">Le bouton haut-parleur fait parler la voix de l'iPhone, même sans réseau. Touchez une phrase pour l'afficher en grand.</p>`;
+  const cur = COUNTRIES[countryOn(todayIso())]?.name;
+  const total = PHRASES.reduce((n, g) => n + g.rows.filter((r) => typeof r !== "string").length, 0);
+  return `<h2 class="sect">Phrases de survie</h2>
+    <input id="phq" type="search" placeholder="Chercher (ex. toilettes, pimenté, gare…)" aria-label="Chercher une phrase">
+    ${PHRASES.map((g) => `<details class="card phr" data-lang="${esc(g.lang)}" ${g.where === cur || (!PHRASES.some((x) => x.where === cur) && g.lang === "Mandarin") ? "open" : ""}><summary><strong>${esc(g.lang)}</strong> <small>${esc(g.where)} · ${g.rows.filter((r) => typeof r !== "string").length} phrases</small></summary>
+    ${g.rows.map((r) => typeof r === "string" ? `<h3 class="phsec">${esc(r.replace(/^#\s*/, ""))}</h3>`
+      : `<div class="phrow" data-q="${esc((r[0] + " " + r[2]).toLowerCase())}"><button class="phrase" data-show-loc="${esc(r[1])}" data-show-fr="${esc(r[0] + " · " + r[2])}" data-show-lang="${LANG_OF_GROUP[g.lang]}"><span>${esc(r[0])}</span><span class="loc">${esc(r[1])}</span><small>${esc(r[2])}</small></button>${playBtn(r[1], LANG_OF_GROUP[g.lang])}</div>`).join("")}</details>`).join("")}
+    <p class="muted small pad">${total} phrases. Le haut-parleur fait parler la voix de l'iPhone, même sans réseau. Touchez une phrase pour l'afficher en grand.</p>`;
 }
 
 function viewFood() {
