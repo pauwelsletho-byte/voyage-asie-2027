@@ -396,3 +396,114 @@ input.filled, textarea.filled { border-color: var(--accent); background: color-m
 .gloc .showitem { padding: 6px 10px; }
 .gloc .showitem .loc { font-size: 17px; }
 .card.guide { padding-top: 4px; padding-bottom: 4px; }
+
+/* ================= animations ================= */
+/* ciel et décors */
+.scene .cloud { animation: cloudmove linear infinite; }
+@keyframes cloudmove { from { transform: translateX(-120px); } to { transform: translateX(460px); } }
+.scene .sunglow { animation: glowpulse 4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes glowpulse { 50% { transform: scale(1.25); opacity: .28; } }
+.scene .star { animation: twinkle 3s ease-in-out infinite; }
+@keyframes twinkle { 50% { opacity: .2; } }
+.scene .shimmer path { stroke-dasharray: 14 10; animation: shim 3s linear infinite; }
+@keyframes shim { to { stroke-dashoffset: -48; } }
+.scene .drift { animation: drift 26s ease-in-out infinite alternate; }
+@keyframes drift { from { transform: translateX(-40px); } to { transform: translateX(150px); } }
+.scene .bob { animation: bob 3s ease-in-out infinite; }
+@keyframes bob { 50% { transform: translateY(2px) rotate(-1.5deg); } }
+.scene .mist { animation: mist 40s ease-in-out infinite alternate; }
+@keyframes mist { from { transform: translateX(-50px); } to { transform: translateX(60px); } }
+.scene .win { animation: winflick 9s steps(1) infinite; }
+@keyframes winflick { 0%, 85% { opacity: 1; } 86%, 100% { opacity: .25; } }
+.scene .scoot { animation: scoot 9s linear infinite; }
+@keyframes scoot { from { transform: translateX(-20px); } to { transform: translateX(420px); } }
+.scene .flag { animation: flag 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: top center; }
+@keyframes flag { 50% { transform: skewX(14deg) rotate(6deg); } }
+.scene .lantern { animation: sway 3s ease-in-out infinite; transform-box: fill-box; transform-origin: top center; }
+@keyframes sway { 50% { transform: translateX(2px); } }
+.scene .rise { animation: rise 16s linear infinite; }
+@keyframes rise { from { transform: translate(0, 0); opacity: 0; } 10% { opacity: 1; } to { transform: translate(30px, -120px); opacity: 0; } }
+.scene .glow { animation: twinkle 2.4s ease-in-out infinite; }
+.scene .fall path { animation: fall .6s linear infinite; }
+@keyframes fall { to { stroke-dashoffset: -18; } }
+.scene .firefly { animation: firefly 6s ease-in-out infinite; }
+@keyframes firefly { 0%, 100% { opacity: 0; transform: translate(0, 0); } 30% { opacity: 1; } 50% { transform: translate(8px, -6px); } 70% { opacity: .8; } }
+.scene .palm { animation: palm 5s ease-in-out infinite; }
+@keyframes palm { 50% { transform: rotate(1.5deg); } }
+.scene .turtle { animation: turtle 40s linear infinite; }
+@keyframes turtle { 0% { transform: translateX(-30px); } 30% { transform: translateX(430px); } 100% { transform: translateX(430px); } }
+.scenehero { padding: 0; overflow: hidden; }
+.scenehero .landscape { height: 118px; }
+
+/* carte : tracé qui se dessine, véhicule du jour */
+.tripmap.draw .seg:not(.fly) { stroke-dasharray: 1; stroke-dashoffset: 1; animation: drawseg .5s ease-out forwards; animation-delay: calc(var(--i) * 90ms); }
+.tripmap.draw .seg.fly { opacity: 0; animation: fadein .5s forwards; animation-delay: calc(var(--i) * 90ms); }
+@keyframes drawseg { to { stroke-dashoffset: 0; } }
+@keyframes fadein { to { opacity: .55; } }
+.tripmap.draw .mdot { opacity: 0; animation: dotin .35s ease-out forwards; animation-delay: 1.6s; }
+@keyframes dotin { to { opacity: 1; } }
+@keyframes popin { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
+
+.veh text { filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
+
+/* écran d'ouverture */
+.splash { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; position: fixed; inset: 0; z-index: 200; background: var(--bg); display: grid; place-items: center; align-content: center; transition: opacity .5s; }
+.splash.out { opacity: 0; pointer-events: none; }
+.splash-svg { width: 180px; height: 180px; }
+.splash .trail { stroke-dashoffset: 300; animation: trail 1.2s ease-out forwards; }
+@keyframes trail { from { stroke-dasharray: 0 400; } to { stroke-dasharray: 400 0; } }
+.splash .plane { offset-path: path("M20 160 Q90 150 120 90 T180 30"); offset-rotate: auto; animation: fly 1.2s ease-in-out forwards; }
+@keyframes fly { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+.splash-t { margin: 0; font-size: 30px; font-weight: 800; color: var(--accent); opacity: 0; animation: fadeup .6s .5s forwards; }
+@keyframes fadeup { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* tampon */
+.stampov { position: fixed; inset: 0; z-index: 150; display: grid; place-items: center; pointer-events: auto; background: transparent; transition: opacity .4s; }
+.stampov.big { background: rgba(0,0,0,.25); }
+.stampov.out { opacity: 0; }
+.stamp { border: 4px solid var(--sc); color: var(--sc); border-radius: 14px; padding: 12px 22px; text-align: center; transform: rotate(-12deg); background: color-mix(in srgb, var(--card) 85%, transparent);
+  font-family: "Courier New", ui-monospace, monospace; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--sc) 40%, transparent); animation: stampin .45s cubic-bezier(.2,1.6,.4,1) both; max-width: 80vw; }
+.stampov.big .stamp { border-radius: 50%; width: 230px; height: 230px; display: grid; place-content: center; padding: 20px; border-width: 5px; }
+.stamp .st1 { display: block; font-size: 26px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+.stampov.big .st1 { font-size: 20px; }
+.stamp .st2 { display: block; font-size: 14px; font-weight: 700; margin-top: 4px; }
+@keyframes stampin { from { transform: rotate(-12deg) scale(2.4); opacity: 0; } 70% { transform: rotate(-12deg) scale(.92); opacity: 1; } to { transform: rotate(-12deg) scale(1); } }
+
+/* confettis */
+.confetto { position: fixed; z-index: 160; font-size: 20px; pointer-events: none; transform: translate(-50%, -50%); animation: conf 1s ease-out forwards; }
+@keyframes conf { to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) + 60px)) rotate(var(--rot)); opacity: 0; } }
+
+/* panneau de gare */
+#jcount .fl { display: inline-block; min-width: .55em; text-align: center; }
+#jcount .fl.tick { animation: flip .07s ease-in; }
+@keyframes flip { from { transform: rotateX(80deg); } to { transform: none; } }
+
+/* moments clés */
+.momentov { position: fixed; inset: 0; z-index: 140; background: rgba(0,0,0,.45); display: grid; place-items: center; padding: 20px; animation: fadein2 .3s; }
+@keyframes fadein2 { from { opacity: 0; } }
+.moment { background: var(--card); border-radius: 22px; padding: 26px 22px 20px; text-align: center; max-width: 340px; border-top: 6px solid var(--mc); animation: popin .4s cubic-bezier(.2,1.4,.4,1); }
+.moment .me1 { font-size: 54px; display: block; } .moment h2 { margin: 6px 0; color: var(--mc); } .moment p { color: var(--muted); }
+
+/* météo animée */
+.wxa { display: inline-block; }
+.wx-sun { animation: sunspin 8s linear infinite; }
+@keyframes sunspin { to { transform: rotate(360deg); } }
+.wx-cloud, .wx-fog { animation: float 4s ease-in-out infinite; }
+@keyframes float { 50% { transform: translateX(3px); } }
+.wx-rain { animation: rainbob 1.2s ease-in-out infinite; }
+@keyframes rainbob { 50% { transform: translateY(2px); } }
+.wx-storm { animation: storm 3s infinite; }
+@keyframes storm { 0%, 90%, 100% { filter: none; } 92%, 96% { filter: brightness(1.8) drop-shadow(0 0 6px #fff7a0); } }
+
+/* feuilleter les jours */
+.daynav { display: flex; align-items: center; gap: 6px; min-width: 0; } .daynav h2 { font-size: 19px; }
+.sheet-body.turn-next { animation: turnnext .35s ease-out; } .sheet-body.turn-prev { animation: turnprev .35s ease-out; }
+@keyframes turnnext { from { transform: translateX(40%) rotateY(-12deg); opacity: .2; } }
+@keyframes turnprev { from { transform: translateX(-40%) rotateY(12deg); opacity: .2; } }
+
+/* tirer pour actualiser */
+.ptr { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 6px); z-index: 30; width: 60px; transform: translate(-50%, 0); opacity: 0; pointer-events: none; transition: opacity .2s; }
+.ptr.spin svg { animation: bob2 .8s ease-in-out infinite; }
+@keyframes bob2 { 50% { transform: rotate(-8deg) translateY(3px); } }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .tripmap.draw .seg { stroke-dashoffset: 0 !important; opacity: .55 !important; } .tripmap.draw .mdot { opacity: 1 !important; } }

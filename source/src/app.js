@@ -5,6 +5,8 @@ import { FOODS, foodId, foodsForStage } from "./food.js";
 import { MAP_W, MAP_H, LAND, VISITED, PTS, LL } from "./mapdata.js";
 import { TIPS, APPS } from "./tips.js";
 import { guideFor, guideOnDay } from "./guide.js";
+import { scene } from "./scenes.js";
+import { splash, stampOverlay, confetti, flap, countUp, moment, pullToRefresh, calm } from "./anim.js";
 import { pdfText, parseConfirmation } from "./pdfread.js";
 import { LEGS, legKm } from "./stats.js";
 import { WMO, cachedForecast, fetchForecast, fetchClimateAll, cachedClimate, cachedAlerts, fetchAlerts, kmBetween } from "./weather.js";
@@ -91,6 +93,7 @@ function noVoice(btn, lang) {
 const playBtn = (text, lang) => `<button type="button" class="play" data-say="${esc(text)}" data-lang="${esc(lang)}" aria-label="Écouter"><svg viewBox="0 0 24 24">${TOOL_ICONS.play}</svg></button>`;
 
 async function boot() {
+  splash();
   await initStore();
   window.addEventListener("online", () => setSync()); window.addEventListener("offline", () => setSync());
   store().onAuth((u) => { S.user = u; u ? startData() : renderLogin(); });
@@ -141,7 +144,9 @@ function renderLogin(msg = "") {
 }
 
 /* ---------- squelette ---------- */
+let ptrOn = false;
 function renderShell() {
+  if (!ptrOn) { ptrOn = true; pullToRefresh(async () => { await ensureWeather(true); await refreshRates?.(); render(); }); }
   document.body.innerHTML = `
   <header class="top"><div class="ttlw"><h1 id="ttl">Asie, été 2027</h1><small id="clock" class="clock" hidden></small></div><span id="sync" class="sync"></span></header>
   <main id="view"></main>
@@ -165,7 +170,7 @@ function render() {
   document.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === S.tab));
   $("#fab").hidden = !["resas", "today", "money"].includes(S.tab);
   $("#fab").setAttribute("aria-label", S.tab === "money" ? "Ajouter une dépense" : "Ajouter une réservation");
-  setTint(); tickClock();
+  setTint(); tickClock(); setTimeout(moments, 400);
   v.innerHTML = ({ today: viewToday, days: viewDays, resas: viewResas, money: viewMoney, more: viewMore })[S.tab]();
   bindView(v);
   setSync();
@@ -282,6 +287,7 @@ const WX_LOCAL = {
   vn: [["Météo vietnamienne officielle", "https://nchmf.gov.vn"]],
   my: [["Météo malaisienne officielle", "https://www.met.gov.my"]],
 };
+const wxIco = (c) => { const e = WMO(c)[0], k = c == null ? "" : c <= 1 ? "sun" : c <= 3 ? "cloud" : c <= 48 ? "fog" : c < 95 ? "rain" : "storm"; return `<span class="wxa wx-${k}">${e}</span>`; };
 const wxDay = (sid, iso) => S.wx?.data?.[sid]?.find((d) => d.date === iso);
 const deg = (v) => Math.round(v) + "°";
 function wxLine(st) {
@@ -333,7 +339,7 @@ function viewMeteo() {
     ${al.length ? alertCards(al) : `<div class="card alert ok"><span class="aico">✅</span><div><b>Rien à signaler</b><p>${A ? "Aucun cyclone actif dans la région" + (t >= TRIP.start ? " près de votre parcours" : "") + "." : "Vérification en cours…"}</p></div></div>`}
     <p class="muted small pad">${A ? `Vérifié à ${new Date(A.at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · cyclones : GDACS (ONU et Commission européenne) · Hong Kong : Observatoire (HKO)` : ""}. Pendant le voyage, les alertes importantes s'affichent aussi sur l'accueil. <a href="https://www.hko.gov.hk/fr/myobservatory.htm" target="_blank" rel="noopener">MyObservatory ↗</a></p>
     <h2 class="sect">Prévisions détaillées</h2>
-    ${rows.length ? `<div class="card list">${rows.map(({ st, d }) => `<button class="wxrowd" data-wxday="${st.id}|${d.date}"><span class="wxdd">${esc(fmt(d.date, { weekday: "short", day: "numeric", month: "short" }))}<small>${esc(st.name.split(" (")[0])}</small></span><span class="wxe">${WMO(d.code)[0]}</span><span class="wxt"><b>${deg(d.max)}</b> ${deg(d.min)}</span><span class="wxr">${d.rain ?? 0} %<small>${d.mm != null ? Math.round(d.mm) + " mm" : ""}</small></span><span class="chev">›</span></button>`).join("")}</div>
+    ${rows.length ? `<div class="card list">${rows.map(({ st, d }) => `<button class="wxrowd" data-wxday="${st.id}|${d.date}"><span class="wxdd">${esc(fmt(d.date, { weekday: "short", day: "numeric", month: "short" }))}<small>${esc(st.name.split(" (")[0])}</small></span><span class="wxe">${wxIco(d.code)}</span><span class="wxt"><b>${deg(d.max)}</b> ${deg(d.min)}</span><span class="wxr">${d.rain ?? 0} %<small>${d.mm != null ? Math.round(d.mm) + " mm" : ""}</small></span><span class="chev">›</span></button>`).join("")}</div>
       <p class="muted small pad">Touchez un jour pour le détail heure par heure (7 premiers jours). <button class="link" data-wxretry>Actualiser</button></p>`
     : `<div class="card"><p class="muted">Les prévisions jour par jour arrivent 16 jours avant chaque étape (à partir de mi-juin 2027 pour Hong Kong). En attendant, voici le temps habituel.</p></div>`}
     ${climateCard()}`;
@@ -342,7 +348,7 @@ function openWxDay(sid, iso) {
   const st = stageById[sid], d = wxDay(sid, iso); if (!st || !d) return;
   const hours = (d.hours || []).filter((h, i) => i % 2 === 0 || d.hours.length < 13);
   const sh = openSheet(`<div class="sheet-head"><h2>${esc(fmtLong(iso))}</h2><button class="x" data-close aria-label="Fermer">✕</button></div>
-    <section class="card wxsum"><p class="kicker">${esc(st.name)}</p><div class="wxbig"><span class="wxe">${WMO(d.code)[0]}</span><b>${deg(d.max)}</b><span>${deg(d.min)}</span></div><p>${esc(WMO(d.code)[1])}</p>
+    <section class="card wxsum"><p class="kicker">${esc(st.name)}</p><div class="wxbig"><span class="wxe">${wxIco(d.code)}</span><b>${deg(d.max)}</b><span>${deg(d.min)}</span></div><p>${esc(WMO(d.code)[1])}</p>
       <div class="kvgrid">
         <div><small>Ressenti</small><b>${d.feel != null ? deg(d.feel) : "—"}</b></div>
         <div><small>Pluie</small><b>${d.rain ?? 0} % · ${d.mm != null ? Math.round(d.mm * 10) / 10 + " mm" : "—"}</b></div>
@@ -350,7 +356,7 @@ function openWxDay(sid, iso) {
         <div><small>UV max</small><b>${d.uv != null ? Math.round(d.uv) + (d.uv >= 8 ? " (très fort)" : d.uv >= 6 ? " (fort)" : "") : "—"}</b></div>
         <div><small>Lever / coucher</small><b>${esc(d.sunrise || "—")} / ${esc(d.sunset || "—")}</b></div>
       </div></section>
-    ${hours.length ? `<h2 class="sect">Heure par heure</h2><div class="card hours">${hours.map((h) => `<div class="hrow"><span class="hh">${esc(h.h)}</span><span class="wxe">${WMO(h.code)[0]}</span><b>${deg(h.temp)}</b><span class="hp">${h.pp ?? 0} %${h.mm ? ` · ${Math.round(h.mm * 10) / 10} mm` : ""}</span><span class="hw">💨 ${Math.round(h.wind || 0)}${h.gust >= 50 ? `<small> (${Math.round(h.gust)})</small>` : ""}</span></div>`).join("")}</div>`
+    ${hours.length ? `<h2 class="sect">Heure par heure</h2><div class="card hours">${hours.map((h) => `<div class="hrow"><span class="hh">${esc(h.h)}</span><span class="wxe">${wxIco(h.code)}</span><b>${deg(h.temp)}</b><span class="hp">${h.pp ?? 0} %${h.mm ? ` · ${Math.round(h.mm * 10) / 10} mm` : ""}</span><span class="hw">💨 ${Math.round(h.wind || 0)}${h.gust >= 50 ? `<small> (${Math.round(h.gust)})</small>` : ""}</span></div>`).join("")}</div>`
       : `<p class="muted pad">Le détail heure par heure est disponible pour les 7 prochains jours.</p>`}
     <p class="muted small pad">Open-Meteo · mis à jour à ${new Date(S.wx.at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</p>`);
 }
@@ -367,7 +373,7 @@ function wxCard(t) {
   const days = [0, 1, 2, 3].map((k) => isoOf(new Date(D(t).getTime() + k * 86400000))).filter((iso) => iso <= TRIP.end);
   const rows = days.map((iso) => { const st = stageOn(iso) || stageById[dayRow(iso)?.[1]]; const d = st && wxDay(st.id, iso); return d ? { iso, st, d } : null; }).filter(Boolean);
   if (!rows.length) return "";
-  return `<section class="card wxcard"><div class="wxrow">${rows.map(({ iso, st, d }, i) => `<div class="wxd ${i ? "" : "today"}" data-wxday="${st.id}|${iso}" role="button"><small>${i ? esc(fmt(iso, { weekday: "short" })) : "Auj."}</small><span class="wxe">${WMO(d.code)[0]}</span><b>${deg(d.max)}</b><small>${deg(d.min)}${d.rain ? ` · ${d.rain} %` : ""}</small>${i && st.id !== rows[i - 1].st.id ? `<small class="wxst">${esc(st.name.split(" (")[0])}</small>` : ""}</div>`).join("")}</div>
+  return `<section class="card wxcard"><div class="wxrow">${rows.map(({ iso, st, d }, i) => `<div class="wxd ${i ? "" : "today"}" data-wxday="${st.id}|${iso}" role="button"><small>${i ? esc(fmt(iso, { weekday: "short" })) : "Auj."}</small><span class="wxe">${wxIco(d.code)}</span><b>${deg(d.max)}</b><small>${deg(d.min)}${d.rain ? ` · ${d.rain} %` : ""}</small>${i && st.id !== rows[i - 1].st.id ? `<small class="wxst">${esc(st.name.split(" (")[0])}</small>` : ""}</div>`).join("")}</div>
     <p class="muted small">${esc(WMO(rows[0].d.code)[1])} · Open-Meteo, mis à jour à ${new Date(S.wx.at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} </p>
     <div class="wxlinks">${(WX_LOCAL[countryOn(t)] || []).concat([["Alertes typhon (Observatoire de Hong Kong)", "https://www.hko.gov.hk/fr/myobservatory.htm"]]).filter((x, i, a) => a.findIndex((y) => y[1] === x[1]) === i).map(([n, u]) => `<a class="chip" href="${u}" target="_blank" rel="noopener">${esc(n)} ↗</a>`).join("")}</div></section>`;
 }
@@ -385,6 +391,29 @@ function openGo(q, label, sid) {
   ov.onclick = (ev) => { if (ev.target === ov || ev.target.closest("[data-gx]")) ov.remove(); };
   document.body.appendChild(ov);
 }
+
+/* ---------- passages de frontière et moments clés ---------- */
+const WELCOME = { hk: ["à Hong Kong", "Néih hóu !"], cn: ["en Chine", "Nǐ hǎo !"], vn: ["au Vietnam", "Xin chào !"], kh: ["au Cambodge", "Suosdei !"], my: ["en Malaisie", "Selamat datang !"] };
+function moments() {
+  if (S.tab !== "today" || !S.user) return;
+  const t = todayIso(); if (t < TRIP.start || t > TRIP.end) return;
+  const kmAll = LEGS.reduce((a, l) => a + legKm(l), 0), food = (S.food || []).filter((f) => f.done).length;
+  if (t === TRIP.start) return moment({ key: "go-" + t, emoji: "✈️", title: "C'est parti !", text: `55 jours, 5 pays, ${kmAll.toLocaleString("fr-FR")} km. Bon vol jusqu'à Hong Kong.` });
+  if (t === "2027-07-24") return moment({ key: "mid-" + t, emoji: "🌗", title: "La moitié du voyage !", text: `Jour 28 sur 55.${food ? ` Déjà ${food} spécialité${food > 1 ? "s" : ""} goûtée${food > 1 ? "s" : ""}.` : ""} Encore le centre du Vietnam, Saigon, Angkor et Tioman devant vous.`, color: "#2F7A52" });
+  if (t === "2027-08-19") return moment({ key: "last-" + t, emoji: "🌇", title: "Dernier soir en Asie", text: `${kmAll.toLocaleString("fr-FR")} km, 5 pays${food ? `, ${food} plats goûtés` : ""}. Un dernier verre face aux tours Petronas ?`, color: "#1C7489" });
+  if (t === TRIP.end) return moment({ key: "back-" + t, emoji: "🏡", title: "Bon retour !", text: "Et bon mariage demain 🥂", color: "#B5810F" });
+  const c = countryOn(t), prev = countryOn(isoOf(new Date(D(t).getTime() - 86400000)));
+  if (c !== prev && WELCOME[c]) stampOverlay({ title: "Bienvenue " + WELCOME[c][0], sub: WELCOME[c][1] + " · " + fmt(t), color: COUNTRIES[c].color, big: true, key: "border-" + t });
+}
+
+/* ---------- heure pour les décors ---------- */
+function hourIn(tz) {
+  const q = new URLSearchParams(location.search).get("hour"); if (q) return +q;
+  const [h, m] = new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date()).split(":").map(Number);
+  return (h % 24) + m / 60;
+}
+setInterval(() => { if (S.tab === "today" && !document.body.classList.contains("locked")) render(); }, 10 * 60 * 1000);
+const VEH = { train: "🚄", vol: "✈️", bateau: "⛴️", bus: "🚌", moto: "🏍️" };
 
 /* ---------- carte du parcours ---------- */
 const ROUTE = ["hongkong", "zhangjiajie", "fenghuang", "huangguoshu", "kunming", "gorges", "shangrila", "dali", "kunming",
@@ -410,8 +439,14 @@ function tripMap(t) {
     const done = st && st.from <= t;
     const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, dx = b[0] - a[0], dy = b[1] - a[1];
     const bend = fly ? 0.18 : 0.08;
-    segs.push(`<path d="M${a} Q${mx - dy * bend},${my + dx * bend} ${b}" class="seg ${fly ? "fly" : ""} ${done ? "done" : ""}" style="--c:${COUNTRIES[st?.c || "fr"].color}"/>`);
+    segs.push(`<path d="M${a} Q${mx - dy * bend},${my + dx * bend} ${b}" pathLength="1" class="seg ${fly ? "fly" : ""} ${done ? "done" : ""}" style="--c:${COUNTRIES[st?.c || "fr"].color};--i:${i}"/>`);
   }
+  // le véhicule du jour glisse sur le trajet
+  const leg = LEGS.find((l) => l[3] === t && PTS[l[0]] && PTS[l[1]]);
+  let veh = "";
+  if (leg && !calm()) { const a = PTS[leg[0]], b = PTS[leg[1]], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, dx = b[0] - a[0], dy = b[1] - a[1], k = leg[2] === "vol" ? 0.18 : 0.08;
+    veh = `<g class="veh"><text font-size="15" text-anchor="middle" y="5">${VEH[leg[2]] || "🚄"}<animateMotion dur="6s" repeatCount="indefinite" path="M${a} Q${mx - dy * k},${my + dx * k} ${b}"/></text></g>`; }
+  let drawCls = ""; try { if (!calm() && !sessionStorage.getItem("mapdraw")) { drawCls = "draw"; sessionStorage.setItem("mapdraw", "1"); } } catch {}
   const dots = MAP_STAGES.map((st, i) => {
     const [x, y] = PTS[st.id], c = COUNTRIES[st.c].color, past = st.to <= t, cur = pos?.st && (pos.st.id === st.id || (pos.st.id === "kl1" && st.id === "kl2"));
     const L = LABELS[st.id];
@@ -425,11 +460,11 @@ function tripMap(t) {
     : t < TRIP.start ? `${MAP_STAGES.length} étapes, ${daysBetween(TRIP.start, TRIP.end)} jours` : "Le voyage est terminé";
   const vb = S.mapVB || [0, 0, MAP_W, MAP_H];
   return `<section class="card mapcard">
-    <div class="mapwrap"><svg viewBox="${vb.join(" ")}" class="tripmap ${vb[2] < MAP_W ? "zoomed" : ""}" aria-label="Carte du parcours">
+    <div class="mapwrap"><svg viewBox="${vb.join(" ")}" class="tripmap ${drawCls} ${vb[2] < MAP_W ? "zoomed" : ""}" aria-label="Carte du parcours">
       <rect width="${MAP_W}" height="${MAP_H}" class="sea"/>
       <path d="${LAND}" class="land"/>
       ${Object.entries(VISITED).map(([k, d]) => `<path d="${d}" class="land v" style="--c:${COUNTRIES[k].color}"/>`).join("")}
-      ${segs.join("")}${dots}${me}
+      ${segs.join("")}${dots}${me}${veh}
     </svg>
     <div class="mapbtns"><button data-mz="in" aria-label="Zoomer">+</button><button data-mz="out" aria-label="Dézoomer">−</button><button data-mz="reset" aria-label="Vue entière">⤢</button></div></div>
     <p class="mapcap">${caption}<span class="muted"> · pincez pour zoomer, touchez une étape</span></p>
@@ -501,7 +536,7 @@ function viewToday() {
     const done = S.resas.length - todo.length;
     const checksDone = CHECKLIST.filter((_, i) => S.checks.some((c) => c.id === "c" + i && c.done)).length;
     return `
-    <section class="hero deco">${landscape("h1")}<div class="hero-in"><p class="kicker">Départ le dimanche 27 juin 2027</p><p class="big">J−${left}</p>
+    <section class="hero deco">${scene("home", hourIn("Europe/Paris"), "h1")}<div class="hero-in"><p class="kicker">Départ le dimanche 27 juin 2027</p><p class="big" id="jcount">J−${left}</p>
       <div class="bars">
         <div><span>Réservations</span><b>${done}/${S.resas.length}</b><i style="--p:${S.resas.length ? done / S.resas.length : 0}"></i></div>
         <div><span>Préparatifs</span><b>${checksDone}/${CHECKLIST.length}</b><i style="--p:${checksDone / CHECKLIST.length}"></i></div>
@@ -512,11 +547,11 @@ function viewToday() {
     <button class="link pad" data-go="resas">Voir toutes les réservations</button>
     ${isDemo() ? `<p class="note">Mode démo : les données restent sur cet appareil. La synchronisation entre vos deux téléphones s'active une fois Firebase configuré.</p>` : ""}`;
   }
-  if (t > TRIP.end) return `<section class="hero deco">${landscape("h3")}<div class="hero-in"><p class="big">Bon retour !</p><p class="muted">Le voyage est terminé. Tout reste consultable dans l'onglet Jours.</p></div></section>${tripMap(t)}`;
+  if (t > TRIP.end) return `<section class="hero deco">${scene("home", hourIn("Europe/Paris"), "h3")}<div class="hero-in"><p class="big">Bon retour !</p><p class="muted">Le voyage est terminé. Tout reste consultable dans l'onglet Jours.</p></div></section>${tripMap(t)}`;
   const tomorrow = isoOf(new Date(D(t).getTime() + 86400000));
   const st = stageOn(t) || stageById[dayRow(t)?.[1]];
   const today = resasOn(t), tom = resasOn(tomorrow);
-  return `${homeAlerts(t)}${dayBlock(t)}
+  return `<section class="hero deco scenehero">${scene(st?.id, hourIn(TZ[st?.c] || "Europe/Paris"), "sc")}</section>${homeAlerts(t)}${dayBlock(t)}
     ${wxCard(t)}
     ${tripMap(t)}
     ${today.length ? `<h2 class="sect">Aujourd'hui</h2>${today.map(resaCard).join("")}` : ""}
@@ -582,6 +617,7 @@ function openPaste() {
     items.forEach(({ target, fields }) => { const id = target?.id || "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
       store().put("resas", id, { ...(target ? {} : { type: "hotel", status: "reserve", files: [] }), ...fields, by: S.user?.email || "" }); });
     closeSheet();
+    if (items.some(({ target, fields }) => fields.status === "reserve" && target?.status !== "reserve")) stampOverlay({ title: "RÉSERVÉ", sub: items.length > 1 ? items.length + " réservations" : esc(items[0].target?.title || items[0].fields.title || ""), color: "#C9462B" });
   };
 }
 
@@ -608,7 +644,10 @@ function bindView(v) {
   v.querySelectorAll("[data-paste]").forEach((b) => (b.onclick = openPaste));
   v.querySelectorAll("[data-journal]").forEach((b) => (b.onclick = () => openJournal(b.dataset.journal)));
   hydrateThumbs(v);
-  v.querySelectorAll("[data-food]").forEach((c) => (c.onchange = () => store().put("food", c.dataset.food, { done: c.checked, by: S.user?.email || "" })));
+  v.querySelectorAll("[data-food]").forEach((c) => (c.onchange = () => {
+    if (c.checked) { const b = c.parentElement.getBoundingClientRect(); confetti(b.left + b.width / 2, b.top + b.height / 2); }
+    store().put("food", c.dataset.food, { done: c.checked, by: S.user?.email || "" }); }));
+  flap($("#jcount", v)); countUp(v);
   v.querySelectorAll("[data-stage]").forEach((b) => (b.onclick = () => openStage(b.dataset.stage)));
   bindMap(v);
   bindShow(v); bindExtras(v);
@@ -629,15 +668,22 @@ function openSheet(html) {
 }
 function closeSheet() { const sh = $("#sheet"); sh.hidden = true; sh.innerHTML = ""; document.body.classList.remove("locked"); }
 
-function openDay(iso) {
+function openDay(iso, dir) {
   const st = stageById[dayRow(iso)?.[1]] || stageOn(iso);
-  const sh = openSheet(`<div class="sheet-head"><h2>${esc(fmtLong(iso))}</h2><button class="x" data-close aria-label="Fermer">✕</button></div>
+  const k = DAYS.findIndex((d) => d[0] === iso), prev = DAYS[k - 1]?.[0], next = DAYS[k + 1]?.[0];
+  const sh = openSheet(`<div class="sheet-head"><div class="daynav">${prev ? `<button class="x" data-dnav="${prev}" aria-label="Jour précédent">‹</button>` : ""}<h2>${esc(fmtLong(iso))}</h2>${next ? `<button class="x" data-dnav="${next}" aria-label="Jour suivant">›</button>` : ""}</div><button class="x" data-close aria-label="Fermer">✕</button></div>
     ${dayBlock(iso)}
     ${(() => { const g = guideOnDay(iso); return g.length ? `<h2 class="sect">Au programme</h2><div class="card guide">${g.map(([sid, it]) => guideItem(stageById[sid], it, true)).join("")}</div>` : ""; })()}
     ${resasOn(iso).map(resaCard).join("")}
     ${stageBlock(st, iso, { noGuide: guideOnDay(iso).length > 0 })}
     ${st && guideOnDay(iso).length ? `<button class="btn wide" data-stage="${st.id}">Tout le programme de l'étape ›</button>` : ""}`);
   sh.querySelectorAll("[data-stage]").forEach((b) => (b.onclick = () => openStage(b.dataset.stage)));
+  sh.querySelectorAll("[data-dnav]").forEach((b) => (b.onclick = () => openDay(b.dataset.dnav, b.dataset.dnav > iso ? "next" : "prev")));
+  const body = sh.querySelector(".sheet-body"); if (dir && !calm()) body.classList.add("turn-" + dir);
+  let sx = null, sy = 0;
+  body.addEventListener("touchstart", (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  body.addEventListener("touchend", (e) => { if (sx == null) return; const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; sx = null;
+    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) { const to = dx < 0 ? next : prev; if (to) openDay(to, dx < 0 ? "next" : "prev"); } }, { passive: true });
   sh.querySelectorAll("[data-journal]").forEach((b) => (b.onclick = () => openJournal(b.dataset.journal)));
   hydrateThumbs(sh);
   sh.querySelectorAll("[data-resa]").forEach((b) => (b.onclick = () => openResa(S.resas.find((r) => r.id === b.dataset.resa))));
@@ -728,7 +774,8 @@ function openResa(r) {
   const collect = () => { const f = $("#rf", sh).elements; return { type: f.type.value, title: f.title.value.trim(), status: f.status.value, date: f.date.value, time: f.time.value, ref: f.ref.value.trim(), price: f.price.value.trim(), paid: parseFloat(String(f.paid.value).replace(",", ".").replace(/[^\d.]/g, "")) || null, paidBy: f.paidBy.value, place: f.place.value.trim(), localAddr: f.localAddr.value.trim(), notes: f.notes.value.trim() }; };
   const ga = $("#goaddr", sh); if (ga) ga.onclick = () => openGo(r.localAddr || r.place, r.title, (stageOn(r.date) || {}).id);
   const sa = $("#showaddr", sh); if (sa) sa.onclick = () => showBig($("#rf", sh).elements.localAddr.value, $("#rf", sh).elements.title.value);
-  $("#rf", sh).onsubmit = async (e) => { e.preventDefault(); store().put("resas", r.id, { ...collect(), files, by: S.user?.email || "" }); closeSheet(); };
+  $("#rf", sh).onsubmit = async (e) => { e.preventDefault(); const c = collect(); store().put("resas", r.id, { ...c, files, by: S.user?.email || "" }); closeSheet();
+    if (c.status === "reserve" && r.status !== "reserve") stampOverlay({ title: "RÉSERVÉ", sub: esc(c.title), color: "#C9462B" }); };
   const del = $("#del", sh);
   if (del) del.onclick = () => confirmIn(del, () => {
     store().remove("resas", r.id); files.forEach((id) => store().deleteFile(id, S.files.find((f) => f.id === id)).catch(() => {})); closeSheet();
@@ -882,7 +929,7 @@ function viewMoney() {
   const maxC = Math.max(1, ...Object.values(byCountry));
   let lastD = "";
   return `<section class="hero money coin">
-      <p class="kicker">Dépensé à deux, tout compris</p><p class="big">${money(Math.round(total))}</p>
+      <p class="kicker">Dépensé à deux, tout compris</p><p class="big"><span data-count="${Math.round(total)}" data-ckey="tot" data-suffix=" €">${money(Math.round(total))}</span></p>
       ${preTotal ? `<p class="muted small">dont ${money(Math.round(preTotal))} de réservations payées · ${money(Math.round(total - preTotal))} sur place</p>` : ""}
       <div class="bars"><div><span>Budget ${money(budget)}</span><b>${Math.round((total / budget) * 100)} %</b><i style="--p:${Math.min(1, total / budget)}"></i></div></div>
       <p class="owe">${owe}</p>
@@ -1007,11 +1054,11 @@ function viewStats() {
   const photos = sum((S.journal || []).map((j) => (j.photos || []).length));
   const spent = sum(S.expenses.map((e) => e.eur || 0)) + sum(resaSpend().map((e) => e.eur));
   const pre = t < TRIP.start;
-  const tile = (big, small, label, p) => `<div class="stat"><b>${big}</b>${small ? `<small>${small}</small>` : ""}<span>${label}</span>${p != null ? `<i style="--p:${p}"></i>` : ""}</div>`;
+  const tile = (big, small, label, p) => `<div class="stat"><b ${typeof big === "number" ? `data-count="${big}" data-ckey="t${label}"` : ""}>${big}</b>${small ? `<small>${small}</small>` : ""}<span>${label}</span>${p != null ? `<i style="--p:${p}"></i>` : ""}</div>`;
   const fmtN = (n) => n.toLocaleString("fr-FR");
   return `<h2 class="sect">Stats du voyage</h2>
     <section class="card stats-hero"><p class="kicker">${pre ? "Ce qui vous attend" : "Depuis le départ"}</p>
-      <p class="big">${fmtN(pre ? kmAll : kmDone)} km</p><p class="muted small">${pre ? "en tout, dont" : `sur ${fmtN(kmAll)} km prévus, dont`} ${fmtN(sum(LEGS.filter((l) => l[2] !== "vol").map(legKm)))} km sans avion</p>
+      <p class="big"><span data-count="${pre ? kmAll : kmDone}" data-ckey="km" data-suffix=" km">${fmtN(pre ? kmAll : kmDone)} km</span></p><p class="muted small">${pre ? "en tout, dont" : `sur ${fmtN(kmAll)} km prévus, dont`} ${fmtN(sum(LEGS.filter((l) => l[2] !== "vol").map(legKm)))} km sans avion</p>
       ${pre ? "" : `<i class="pbar" style="--p:${kmDone / kmAll}"></i>`}</section>
     <div class="stats">
       ${tile(pre ? DAYS.length : daysDone, pre ? "" : "/ " + DAYS.length, "jours", pre ? null : daysDone / DAYS.length)}
