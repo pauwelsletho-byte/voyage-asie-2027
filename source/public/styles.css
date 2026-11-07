@@ -559,3 +559,5 @@ input.filled, textarea.filled { border-color: var(--accent); background: color-m
 @keyframes vback { from { left: calc(100% + 20px); transform: scaleX(-1); } to { left: -60px; transform: scaleX(-1); } }
 @keyframes trailgo { 0% { width: 0; opacity: .8; } 75% { opacity: .8; } 100% { width: 100%; opacity: 0; } }
 @keyframes vkmout { to { opacity: 0; } }
+.swapping .legveh { opacity: 0; }
+.ghost { overflow: hidden !important; }

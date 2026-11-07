@@ -541,18 +541,9 @@ function openStage(id, dir) {
     ${days.map(([iso, , trj, act, nuit]) => `<button class="row" style="--c:${COUNTRIES[st.c].color}" data-day="${iso}"><span class="date">${esc(fmt(iso))}</span><span class="txt"><strong>${esc(act || trj || "")}</strong><small>${esc(nuit)}</small></span></button>`).join("")}`);
   sh.querySelectorAll("[data-resa]").forEach((b) => (b.onclick = () => openResa(S.resas.find((r) => r.id === b.dataset.resa))));
   sh.querySelectorAll("[data-day]").forEach((b) => (b.onclick = () => openDay(b.dataset.day)));
-  // passage d'une étape à l'autre : l'ancienne page part sur le côté, la nouvelle arrive, le véhicule traverse tout l'écran
-  const go = (to, d) => { if (!to) return; if (calm()) return openStage(to, d);
+  const go = (to, d) => { if (!to) return;
     const a = d === "next" ? id : to, b = d === "next" ? to : id, leg = LEGS.find((l) => l[0] === a && (l[1] === b || (b === "kl2" && l[1] === "kl1"))) || LEGS.find((l) => l[1] === b);
-    const old = sh.querySelector(".sheet-body"), r = old.getBoundingClientRect(), top0 = old.scrollTop;
-    const ghost = old.cloneNode(true); ghost.classList.remove("turn-next", "turn-prev", "turn-in-next", "turn-in-prev"); ghost.classList.add("ghost", "out-" + d);
-    Object.assign(ghost.style, { position: "fixed", left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px", maxHeight: "none", margin: "0", zIndex: 25 });
-    document.body.appendChild(ghost); ghost.scrollTop = top0;
-    const veh = document.createElement("div"); veh.className = "travveh " + d; veh.style.top = Math.max(r.top + 120, 140) + "px"; veh.style.setProperty("--c", COUNTRIES[stageById[to].c].color);
-    veh.innerHTML = `<span class="trail"></span><span class="v">${VEH[leg?.[2]] || "🚄"}</span>${leg ? `<span class="vkm">≈ ${legKm(leg).toLocaleString("fr-FR")} km</span>` : ""}`;
-    document.body.appendChild(veh);
-    openStage(to, "in-" + d);
-    setTimeout(() => { ghost.remove(); veh.remove(); }, 1500); };
+    pageSwap(sh, d, (cls) => openStage(to, cls), { icon: VEH[leg?.[2]] || "🚄", km: leg ? legKm(leg) : 0, color: COUNTRIES[stageById[to].c].color }); };
   sh.querySelectorAll("[data-snav]").forEach((b) => (b.onclick = () => go(b.dataset.snav, b.dataset.dir)));
   bindShow(sh);
   const body = sh.querySelector(".sheet-body"); if (dir && !calm()) body.classList.add("turn-" + dir);
@@ -698,6 +689,29 @@ function bindView(v) {
   }));
 }
 
+// Passage animé d'une page à l'autre : l'ancienne part, la nouvelle arrive ;
+// s'il y a un trajet, le véhicule suit la ligne du trajet d'un bord de l'écran à l'autre
+function pageSwap(sh, d, show, v) {
+  if (calm()) return show("");
+  const old = sh.querySelector(".sheet-body"), r = old.getBoundingClientRect(), top0 = old.scrollTop;
+  const ghost = old.cloneNode(true); ghost.className = "sheet-body ghost out-" + d;
+  Object.assign(ghost.style, { position: "fixed", left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px", maxHeight: "none", margin: "0", zIndex: 25 });
+  document.body.appendChild(ghost); ghost.scrollTop = top0;
+  show("in-" + d);
+  const nb = sh.querySelector(".sheet-body");
+  let veh = null;
+  if (v) {
+    const line = nb.querySelector(".legline") || ghost.querySelector(".legline");
+    const lr = line ? line.getBoundingClientRect() : null;
+    const y = lr && lr.top > 0 && lr.top < innerHeight ? lr.top + lr.height / 2 : Math.max(r.top + 160, 180);
+    ghost.classList.add("swapping"); nb.classList.add("swapping");
+    veh = document.createElement("div"); veh.className = "travveh " + d; veh.style.top = (y - 22) + "px"; veh.style.setProperty("--c", v.color);
+    veh.innerHTML = `<span class="trail"></span><span class="v">${v.icon}</span>${v.km ? `<span class="vkm">≈ ${v.km.toLocaleString("fr-FR")} km</span>` : ""}`;
+    document.body.appendChild(veh);
+  }
+  setTimeout(() => { ghost.remove(); veh?.remove(); nb.classList.remove("swapping"); }, 1450);
+}
+
 function openSheet(html) {
   const sh = $("#sheet"); sh.innerHTML = `<div class="sheet-bg" data-close></div><div class="sheet-body">${html}</div>`; sh.hidden = false;
   document.body.classList.add("locked");
@@ -723,12 +737,15 @@ function openDay(iso, dir) {
     ${stageBlock(st, iso, { noGuide: guideOnDay(iso).length > 0 })}
     ${st && guideOnDay(iso).length ? `<button class="btn wide" data-stage="${st.id}">Tout le programme de l'étape ›</button>` : ""}`);
   sh.querySelectorAll("[data-stage]").forEach((b) => (b.onclick = () => openStage(b.dataset.stage)));
-  sh.querySelectorAll("[data-dnav]").forEach((b) => (b.onclick = () => openDay(b.dataset.dnav, b.dataset.dnav > iso ? "next" : "prev")));
+  const goDay = (to, d) => { if (!to) return;
+    const lg = LEGS.find((l) => l[3] === (d === "next" ? to : iso)), cst = whereOn(to) || st;
+    pageSwap(sh, d, (cls) => openDay(to, cls), lg ? { icon: VEH[lg[2]] || "🚄", km: legKm(lg), color: COUNTRIES[cst?.c || "fr"].color } : null); };
+  sh.querySelectorAll("[data-dnav]").forEach((b) => (b.onclick = () => goDay(b.dataset.dnav, b.dataset.dnav > iso ? "next" : "prev")));
   const body = sh.querySelector(".sheet-body"); if (dir && !calm()) body.classList.add("turn-" + dir);
   let sx = null, sy = 0;
   body.addEventListener("touchstart", (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
   body.addEventListener("touchend", (e) => { if (sx == null) return; const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; sx = null;
-    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) { const to = dx < 0 ? next : prev; if (to) openDay(to, dx < 0 ? "next" : "prev"); } }, { passive: true });
+    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) goDay(dx < 0 ? next : prev, dx < 0 ? "next" : "prev"); }, { passive: true });
   sh.querySelectorAll("[data-journal]").forEach((b) => (b.onclick = () => openJournal(b.dataset.journal)));
   hydrateThumbs(sh);
   sh.querySelectorAll("[data-resa]").forEach((b) => (b.onclick = () => openResa(S.resas.find((r) => r.id === b.dataset.resa))));
