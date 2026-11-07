@@ -534,19 +534,28 @@ function openStage(id, dir) {
   const k = MAP_STAGES.findIndex((x) => x.id === id), prev = MAP_STAGES[k - 1]?.id, next = MAP_STAGES[k + 1]?.id;
   const sh = openSheet(`<div class="sheet-head"><div class="daynav">${prev ? `<button class="x" data-snav="${prev}" data-dir="prev" aria-label="Étape précédente">‹</button>` : ""}<h2><span class="stnum big" style="--c:${COUNTRIES[st.c].color}">${stageNum(st.id)}</span>${esc(st.name.replace(" (croisière)", ""))}</h2>${next ? `<button class="x" data-snav="${next}" data-dir="next" aria-label="Étape suivante">›</button>` : ""}</div><button class="x" data-close aria-label="Fermer">✕</button></div>
     <div class="dayscene">${scene(st.id, hourIn(TZ[st.c] || "Europe/Paris"), "ss")}</div>
+    ${(() => { const inc = LEGS.find((l) => l[1] === id || (id === "kl2" && l[1] === "kl1")); if (!inc) return "";
+      return `<div class="legstrip" style="--c:${COUNTRIES[st.c].color}"><b>${esc(legName(inc[0]))}</b><span class="legline"><span class="legveh">${VEH[inc[2]] || "🚄"}</span></span><b>${esc(legName(id))}</b><small>Pour y arriver · ${esc(fmt(inc[3]))} · ≈ ${legKm(inc).toLocaleString("fr-FR")} km${inc[4] ? " · de nuit" : ""}</small></div>`; })()}
     ${stageBlock(st, st.from)}
     <h2 class="sect">Les jours</h2>
     ${days.map(([iso, , trj, act, nuit]) => `<button class="row" style="--c:${COUNTRIES[st.c].color}" data-day="${iso}"><span class="date">${esc(fmt(iso))}</span><span class="txt"><strong>${esc(act || trj || "")}</strong><small>${esc(nuit)}</small></span></button>`).join("")}`);
   sh.querySelectorAll("[data-resa]").forEach((b) => (b.onclick = () => openResa(S.resas.find((r) => r.id === b.dataset.resa))));
   sh.querySelectorAll("[data-day]").forEach((b) => (b.onclick = () => openDay(b.dataset.day)));
-  sh.querySelectorAll("[data-snav]").forEach((b) => (b.onclick = () => openStage(b.dataset.snav, b.dataset.dir)));
+  const go = (to, d) => { if (!to) return; if (calm()) return openStage(to, d);
+    const a = d === "next" ? id : to, b = d === "next" ? to : id, leg = LEGS.find((l) => l[0] === a && (l[1] === b || (b === "kl2" && l[1] === "kl1"))) || LEGS.find((l) => l[1] === b);
+    const ov = document.createElement("div"); ov.className = "legtrans " + d;
+    ov.innerHTML = `<div class="ltin" style="--c:${COUNTRIES[stageById[to].c].color}"><b class="lta">${esc(legName(d === "next" ? id : to))}</b><span class="ltline"><span class="ltveh">${VEH[leg?.[2]] || "🚄"}</span></span><b class="ltb">${esc(legName(d === "next" ? to : id))}</b>${leg ? `<small>≈ ${legKm(leg).toLocaleString("fr-FR")} km${leg[4] ? " · de nuit" : ""}</small>` : ""}</div>`;
+    document.body.appendChild(ov);
+    setTimeout(() => { openStage(to, d); setTimeout(() => ov.remove(), 60); }, 1100); };
+  sh.querySelectorAll("[data-snav]").forEach((b) => (b.onclick = () => go(b.dataset.snav, b.dataset.dir)));
   bindShow(sh);
   const body = sh.querySelector(".sheet-body"); if (dir && !calm()) body.classList.add("turn-" + dir);
   let sx = null, sy = 0;
   body.addEventListener("touchstart", (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
   body.addEventListener("touchend", (e) => { if (sx == null) return; const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; sx = null;
-    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) { const to = dx < 0 ? next : prev; if (to) openStage(to, dx < 0 ? "next" : "prev"); } }, { passive: true });
+    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx < 0 ? next : prev, dx < 0 ? "next" : "prev"); }, { passive: true });
 }
+const legName = (sid) => sid === "nice" ? "Nice" : (stageById[sid]?.name || "").replace(/ \(.*\)/, "").replace("Cascade de ", "").replace("Gorges du ", "").replace(" et Angkor", "");
 
 function viewToday() {
   const t = todayIso();
