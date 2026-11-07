@@ -683,7 +683,14 @@ function closeSheet() { const sh = $("#sheet"); sh.hidden = true; sh.innerHTML =
 function openDay(iso, dir) {
   const st = stageById[dayRow(iso)?.[1]] || stageOn(iso);
   const k = DAYS.findIndex((d) => d[0] === iso), prev = DAYS[k - 1]?.[0], next = DAYS[k + 1]?.[0];
+  const here = whereOn(iso) || st;
+  const leg = LEGS.find((l) => l[3] === iso);
+  const nm = (id) => id === "nice" ? "Nice" : (stageById[id]?.name || "").replace(/ \(.*\)/, "").replace("Cascade de ", "").replace("Gorges du ", "").replace(" et Angkor", "");
+  const n = DAYS.findIndex((d) => d[0] === iso) + 1;
+  const top = `<div class="dayscene">${scene(here?.id || "home", hourIn(TZ[here?.c] || "Europe/Paris"), "ds")}<div class="dayprog"><i style="--p:${n / DAYS.length}"></i></div></div>
+    ${leg ? `<div class="legstrip" style="--c:${COUNTRIES[(stageById[leg[1]] || here || {}).c || "fr"].color}"><b>${esc(nm(leg[0]))}</b><span class="legline"><span class="legveh">${VEH[leg[2]] || "🚄"}</span></span><b>${esc(nm(leg[1]))}</b><small>≈ ${legKm(leg).toLocaleString("fr-FR")} km${leg[4] ? " · de nuit" : ""}</small></div>` : ""}`;
   const sh = openSheet(`<div class="sheet-head"><div class="daynav">${prev ? `<button class="x" data-dnav="${prev}" aria-label="Jour précédent">‹</button>` : ""}<h2>${esc(fmtLong(iso))}</h2>${next ? `<button class="x" data-dnav="${next}" aria-label="Jour suivant">›</button>` : ""}</div><button class="x" data-close aria-label="Fermer">✕</button></div>
+    ${top}
     ${dayBlock(iso)}
     ${(() => { const g = guideOnDay(iso); return g.length ? `<h2 class="sect">Au programme</h2><div class="card guide">${g.map(([sid, it]) => guideItem(stageById[sid], it, true)).join("")}</div>` : ""; })()}
     ${resasOn(iso).map(resaCard).join("")}

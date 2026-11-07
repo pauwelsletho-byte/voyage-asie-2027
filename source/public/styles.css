@@ -508,3 +508,18 @@ input.filled, textarea.filled { border-color: var(--accent); background: color-m
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .tripmap.draw .seg { stroke-dashoffset: 0 !important; opacity: .55 !important; } .tripmap.draw .mdot { opacity: 1 !important; } }
 .tripmap .tour text { filter: drop-shadow(0 1px 2px rgba(0,0,0,.3)); }
+/* page d'un jour animée */
+.dayscene { border-radius: 16px; overflow: hidden; margin: 0 0 8px; position: relative; }
+.dayscene .landscape { height: 120px; }
+.dayprog { position: absolute; left: 10px; right: 10px; bottom: 8px; height: 4px; border-radius: 99px; background: rgba(255,255,255,.35); overflow: hidden; }
+.dayprog i { position: absolute; inset: 0; width: calc(var(--p) * 100%); background: #fff; border-radius: 99px; animation: grow 1s ease-out; }
+@keyframes grow { from { width: 0; } }
+.legstrip { display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto auto; align-items: center; gap: 2px 10px; background: var(--card); border-radius: 16px; padding: 12px 14px; margin: 8px 0; box-shadow: var(--shadow); }
+.legstrip b { font-size: 14px; } .legstrip small { grid-column: 1 / -1; text-align: center; color: var(--muted); font-size: 12px; }
+.legline { position: relative; height: 24px; }
+.legline::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 2px dashed var(--c); opacity: .6; }
+.legveh { position: absolute; top: 50%; font-size: 18px; transform: translate(-50%, -55%); animation: legmove 3.5s ease-in-out infinite; }
+@keyframes legmove { from { left: 0; } 80%, to { left: 100%; } }
+.sheet .gitem { animation: fadeup .4s both; }
+.sheet .gitem:nth-child(2) { animation-delay: .08s; } .sheet .gitem:nth-child(3) { animation-delay: .16s; } .sheet .gitem:nth-child(4) { animation-delay: .24s; } .sheet .gitem:nth-child(n+5) { animation-delay: .32s; }
+.sheet .card.day { animation: fadeup .35s both; }
