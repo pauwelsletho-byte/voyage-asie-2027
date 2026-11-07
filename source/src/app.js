@@ -527,16 +527,25 @@ function bindMap(v) {
     if (b.dataset.mz === "reset") apply(full); else zoomAt(b.dataset.mz === "in" ? 1.8 : 1 / 1.8, c[0], c[1]);
   }));
 }
-function openStage(id) {
+function openStage(id, dir) {
+  if (id === "kl1") id = "kl2";
   const st = stageById[id]; if (!st) return;
   const days = DAYS.filter(([iso, sid]) => (sid || (stageOn(iso) || {}).id) === id);
-  const sh = openSheet(`<div class="sheet-head"><h2><span class="stnum big" style="--c:${COUNTRIES[st.c].color}">${stageNum(st.id)}</span>${esc(st.name)}</h2><button class="x" data-close aria-label="Fermer">✕</button></div>
+  const k = MAP_STAGES.findIndex((x) => x.id === id), prev = MAP_STAGES[k - 1]?.id, next = MAP_STAGES[k + 1]?.id;
+  const sh = openSheet(`<div class="sheet-head"><div class="daynav">${prev ? `<button class="x" data-snav="${prev}" data-dir="prev" aria-label="Étape précédente">‹</button>` : ""}<h2><span class="stnum big" style="--c:${COUNTRIES[st.c].color}">${stageNum(st.id)}</span>${esc(st.name.replace(" (croisière)", ""))}</h2>${next ? `<button class="x" data-snav="${next}" data-dir="next" aria-label="Étape suivante">›</button>` : ""}</div><button class="x" data-close aria-label="Fermer">✕</button></div>
+    <div class="dayscene">${scene(st.id, hourIn(TZ[st.c] || "Europe/Paris"), "ss")}</div>
     ${stageBlock(st, st.from)}
     <h2 class="sect">Les jours</h2>
     ${days.map(([iso, , trj, act, nuit]) => `<button class="row" style="--c:${COUNTRIES[st.c].color}" data-day="${iso}"><span class="date">${esc(fmt(iso))}</span><span class="txt"><strong>${esc(act || trj || "")}</strong><small>${esc(nuit)}</small></span></button>`).join("")}`);
   sh.querySelectorAll("[data-resa]").forEach((b) => (b.onclick = () => openResa(S.resas.find((r) => r.id === b.dataset.resa))));
   sh.querySelectorAll("[data-day]").forEach((b) => (b.onclick = () => openDay(b.dataset.day)));
+  sh.querySelectorAll("[data-snav]").forEach((b) => (b.onclick = () => openStage(b.dataset.snav, b.dataset.dir)));
   bindShow(sh);
+  const body = sh.querySelector(".sheet-body"); if (dir && !calm()) body.classList.add("turn-" + dir);
+  let sx = null, sy = 0;
+  body.addEventListener("touchstart", (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  body.addEventListener("touchend", (e) => { if (sx == null) return; const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; sx = null;
+    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) { const to = dx < 0 ? next : prev; if (to) openStage(to, dx < 0 ? "next" : "prev"); } }, { passive: true });
 }
 
 function viewToday() {
@@ -662,6 +671,8 @@ function bindView(v) {
   flap($("#jcount", v)); countUp(v);
   v.querySelectorAll("[data-stage]").forEach((b) => (b.onclick = () => openStage(b.dataset.stage)));
   bindMap(v);
+  const chips = v.querySelector(".mapchips");
+  if (chips) { chips.scrollLeft = S.chipsX || 0; chips.addEventListener("scroll", () => (S.chipsX = chips.scrollLeft), { passive: true }); }
   bindShow(v); bindExtras(v);
   v.querySelectorAll("[data-filter]").forEach((b) => (b.onclick = () => { S.filter = b.dataset.filter; render(); }));
   v.querySelectorAll("[data-go]").forEach((b) => (b.onclick = () => { S.tab = b.dataset.go; render(); }));
