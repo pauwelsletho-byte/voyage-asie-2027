@@ -248,7 +248,7 @@ function dayBlock(iso) {
 const TZ = { hk: "Asia/Hong_Kong", cn: "Asia/Shanghai", vn: "Asia/Ho_Chi_Minh", kh: "Asia/Phnom_Penh", my: "Asia/Kuala_Lumpur" };
 function tickClock() {
   const el = $("#clock"); if (!el) return;
-  const t = todayIso(), c = countryOn(t), tz = TZ[c];
+  const t = todayIso(), c = whereOn(t)?.c, tz = TZ[c];
   if (t < TRIP.start || t > TRIP.end || !tz) { el.hidden = true; return; }
   const h = (z) => new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: z });
   el.hidden = false; el.textContent = `Ici ${h(tz)} · France ${h("Europe/Paris")}`;
@@ -551,7 +551,8 @@ function viewToday() {
   const tomorrow = isoOf(new Date(D(t).getTime() + 86400000));
   const st = stageOn(t) || stageById[dayRow(t)?.[1]];
   const today = resasOn(t), tom = resasOn(tomorrow);
-  return `<section class="hero deco scenehero">${scene(st?.id, hourIn(TZ[st?.c] || "Europe/Paris"), "sc")}</section>${homeAlerts(t)}${dayBlock(t)}
+  const here = whereOn(t);
+  return `<section class="hero deco scenehero">${scene(here?.id, hourIn(TZ[here?.c] || "Asia/Hong_Kong"), "sc")}</section>${homeAlerts(t)}${dayBlock(t)}
     ${wxCard(t)}
     ${tripMap(t)}
     ${today.length ? `<h2 class="sect">Aujourd'hui</h2>${today.map(resaCard).join("")}` : ""}
@@ -861,6 +862,8 @@ const people = () => ({ p1: S.settings.people?.p1 || "Personne 1", p2: S.setting
 const me = () => { try { return localStorage.getItem("voyage-me") || "p1"; } catch { return "p1"; } };
 const setMe = (v) => { try { localStorage.setItem("voyage-me", v); } catch {} };
 const countryOn = (iso) => (stageOn(iso) || stageById[dayRow(iso)?.[1]])?.c || "fr";
+// étape où l'on se trouve, même un jour de trajet (train de nuit…) : la dernière commencée
+const whereOn = (iso) => stageOn(iso) || stageById[dayRow(iso)?.[1]] || (iso >= TRIP.start && iso <= TRIP.end ? [...STAGES].reverse().find((s) => s.from <= iso) : null);
 
 /* ---------- Dépenses ---------- */
 // Réservations payées → comptées dans le budget (un hôtel est réparti sur ses nuits)
