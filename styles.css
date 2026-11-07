@@ -436,11 +436,11 @@ input.filled, textarea.filled { border-color: var(--accent); background: color-m
 .scenehero .landscape { height: 118px; }
 
 /* carte : tracé qui se dessine, véhicule du jour */
-.tripmap.draw .seg:not(.fly) { stroke-dasharray: 1; stroke-dashoffset: 1; animation: drawseg .5s ease-out forwards; animation-delay: calc(var(--i) * 90ms); }
-.tripmap.draw .seg.fly { opacity: 0; animation: fadein .5s forwards; animation-delay: calc(var(--i) * 90ms); }
+.tripmap.draw .seg:not(.fly) { stroke-dasharray: 1; stroke-dashoffset: 1; animation: drawseg .5s ease-out forwards; animation-delay: calc(1400ms + var(--i) * 110ms - var(--el, 0ms)); }
+.tripmap.draw .seg.fly { opacity: 0; animation: fadein .5s forwards; animation-delay: calc(1400ms + var(--i) * 110ms - var(--el, 0ms)); }
 @keyframes drawseg { to { stroke-dashoffset: 0; } }
 @keyframes fadein { to { opacity: .55; } }
-.tripmap.draw .mdot { opacity: 0; animation: dotin .35s ease-out forwards; animation-delay: 1.6s; }
+.tripmap.draw .mdot { opacity: 0; animation: dotin .4s ease-out forwards; animation-delay: calc(3800ms - var(--el, 0ms)); }
 @keyframes dotin { to { opacity: 1; } }
 @keyframes popin { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
 
@@ -507,3 +507,4 @@ input.filled, textarea.filled { border-color: var(--accent); background: color-m
 @keyframes bob2 { 50% { transform: rotate(-8deg) translateY(3px); } }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .tripmap.draw .seg { stroke-dashoffset: 0 !important; opacity: .55 !important; } .tripmap.draw .mdot { opacity: 1 !important; } }
+.tripmap .tour text { filter: drop-shadow(0 1px 2px rgba(0,0,0,.3)); }

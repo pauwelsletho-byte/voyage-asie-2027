@@ -413,6 +413,7 @@ function hourIn(tz) {
   return (h % 24) + m / 60;
 }
 setInterval(() => { if (S.tab === "today" && !document.body.classList.contains("locked")) render(); }, 10 * 60 * 1000);
+let mapT0 = 0;
 const VEH = { train: "🚄", vol: "✈️", bateau: "⛴️", bus: "🚌", moto: "🏍️" };
 
 /* ---------- carte du parcours ---------- */
@@ -446,7 +447,17 @@ function tripMap(t) {
   let veh = "";
   if (leg && !calm()) { const a = PTS[leg[0]], b = PTS[leg[1]], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, dx = b[0] - a[0], dy = b[1] - a[1], k = leg[2] === "vol" ? 0.18 : 0.08;
     veh = `<g class="veh"><text font-size="15" text-anchor="middle" y="5">${VEH[leg[2]] || "🚄"}<animateMotion dur="6s" repeatCount="indefinite" path="M${a} Q${mx - dy * k},${my + dx * k} ${b}"/></text></g>`; }
-  let drawCls = ""; try { if (!calm() && !sessionStorage.getItem("mapdraw")) { drawCls = "draw"; sessionStorage.setItem("mapdraw", "1"); } } catch {}
+  // le tracé se dessine à chaque ouverture de l'appli, juste après l'écran d'accueil (et continue si l'écran se rafraîchit)
+  let drawCls = "", drawStyle = "";
+  if (!calm()) { mapT0 ||= performance.now(); const el = performance.now() - mapT0; if (el < 6000) { drawCls = "draw"; drawStyle = `--el:${Math.round(el)}ms`; } }
+  // avant et après le voyage : une petite valise parcourt tout l'itinéraire en boucle
+  let tour = "";
+  if (!calm() && (t < TRIP.start || t > TRIP.end)) {
+    let d = "";
+    for (let i = 1; i < ROUTE.length; i++) { const a = PTS[ROUTE[i - 1].replace("✈", "")], b = PTS[ROUTE[i].replace("✈", "")], fly = ROUTE[i].startsWith("✈"), mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, dx = b[0] - a[0], dy = b[1] - a[1], k = fly ? 0.18 : 0.08;
+      d += (i === 1 ? `M${a}` : "") + ` Q${mx - dy * k},${my + dx * k} ${b}`; }
+    tour = `<g class="tour"><circle r="10" fill="#F0775A" opacity=".3"><animateMotion dur="26s" begin="2.2s" repeatCount="indefinite" path="${d}"/></circle><circle r="4" fill="#F0775A" stroke="#fff" stroke-width="1.5"><animateMotion dur="26s" begin="2.2s" repeatCount="indefinite" path="${d}"/></circle><text font-size="13" text-anchor="middle" y="-6">🧳<animateMotion dur="26s" begin="2.2s" repeatCount="indefinite" path="${d}"/></text></g>`;
+  }
   const dots = MAP_STAGES.map((st, i) => {
     const [x, y] = PTS[st.id], c = COUNTRIES[st.c].color, past = st.to <= t, cur = pos?.st && (pos.st.id === st.id || (pos.st.id === "kl1" && st.id === "kl2"));
     const L = LABELS[st.id];
@@ -460,11 +471,11 @@ function tripMap(t) {
     : t < TRIP.start ? `${MAP_STAGES.length} étapes, ${daysBetween(TRIP.start, TRIP.end)} jours` : "Le voyage est terminé";
   const vb = S.mapVB || [0, 0, MAP_W, MAP_H];
   return `<section class="card mapcard">
-    <div class="mapwrap"><svg viewBox="${vb.join(" ")}" class="tripmap ${drawCls} ${vb[2] < MAP_W ? "zoomed" : ""}" aria-label="Carte du parcours">
+    <div class="mapwrap"><svg viewBox="${vb.join(" ")}" class="tripmap ${drawCls} ${vb[2] < MAP_W ? "zoomed" : ""}" style="${drawStyle}" aria-label="Carte du parcours">
       <rect width="${MAP_W}" height="${MAP_H}" class="sea"/>
       <path d="${LAND}" class="land"/>
       ${Object.entries(VISITED).map(([k, d]) => `<path d="${d}" class="land v" style="--c:${COUNTRIES[k].color}"/>`).join("")}
-      ${segs.join("")}${dots}${me}${veh}
+      ${segs.join("")}${dots}${me}${veh}${tour}
     </svg>
     <div class="mapbtns"><button data-mz="in" aria-label="Zoomer">+</button><button data-mz="out" aria-label="Dézoomer">−</button><button data-mz="reset" aria-label="Vue entière">⤢</button></div></div>
     <p class="mapcap">${caption}<span class="muted"> · pincez pour zoomer, touchez une étape</span></p>
