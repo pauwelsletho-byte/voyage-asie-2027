@@ -700,7 +700,7 @@ function pageSwap(sh, d, show, v) {
   show("in-" + d);
   const nb = sh.querySelector(".sheet-body");
   let veh = null;
-  if (v) {
+  if (false && v) {
     const line = nb.querySelector(".legline") || ghost.querySelector(".legline");
     const lr = line ? line.getBoundingClientRect() : null;
     const y = lr && lr.top > 0 && lr.top < innerHeight ? lr.top + lr.height / 2 : Math.max(r.top + 160, 180);
