@@ -540,3 +540,22 @@ input.filled, textarea.filled { border-color: var(--accent); background: color-m
 @keyframes ltgo { from { left: 0; } to { left: 100%; } }
 @keyframes ltback { from { left: 100%; transform: translate(-50%, -55%) scaleX(-1); } to { left: 0; transform: translate(-50%, -55%) scaleX(-1); } }
 .ltb { animation: popin .3s .8s both; }
+/* l'ancienne page part, la nouvelle arrive, le véhicule fait le trajet d'un bord à l'autre */
+.sheet-body.turn-in-next { animation: pgin-r 1.15s cubic-bezier(.65,0,.35,1) both; }
+.sheet-body.turn-in-prev { animation: pgin-l 1.15s cubic-bezier(.65,0,.35,1) both; }
+.ghost.out-next { animation: pgout-l 1.15s cubic-bezier(.65,0,.35,1) both; pointer-events: none; }
+.ghost.out-prev { animation: pgout-r 1.15s cubic-bezier(.65,0,.35,1) both; pointer-events: none; }
+@keyframes pgin-r { from { transform: translateX(100vw); } }
+@keyframes pgin-l { from { transform: translateX(-100vw); } }
+@keyframes pgout-l { to { transform: translateX(-100vw); } }
+@keyframes pgout-r { to { transform: translateX(100vw); } }
+.travveh { position: fixed; left: 0; right: 0; height: 44px; z-index: 30; pointer-events: none; }
+.travveh .v { position: absolute; top: 0; font-size: 34px; filter: drop-shadow(0 3px 6px rgba(0,0,0,.3)); animation: vgo 1.3s cubic-bezier(.5,0,.4,1) both; }
+.travveh.prev .v { animation-name: vback; }
+.travveh .trail { position: absolute; top: 22px; height: 0; border-top: 3px dashed var(--c); left: 0; animation: trailgo 1.3s cubic-bezier(.5,0,.4,1) both; opacity: .8; }
+.travveh.prev .trail { left: auto; right: 0; }
+.travveh .vkm { position: absolute; top: 46px; left: 50%; transform: translateX(-50%); font-size: 13px; font-weight: 700; color: var(--c); background: color-mix(in srgb, var(--card) 85%, transparent); padding: 2px 8px; border-radius: 99px; animation: fadein2 .3s .35s both, vkmout .3s 1.05s forwards; }
+@keyframes vgo { from { left: -60px; } to { left: calc(100% + 20px); } }
+@keyframes vback { from { left: calc(100% + 20px); transform: scaleX(-1); } to { left: -60px; transform: scaleX(-1); } }
+@keyframes trailgo { 0% { width: 0; opacity: .8; } 75% { opacity: .8; } 100% { width: 100%; opacity: 0; } }
+@keyframes vkmout { to { opacity: 0; } }

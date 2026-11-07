@@ -541,12 +541,18 @@ function openStage(id, dir) {
     ${days.map(([iso, , trj, act, nuit]) => `<button class="row" style="--c:${COUNTRIES[st.c].color}" data-day="${iso}"><span class="date">${esc(fmt(iso))}</span><span class="txt"><strong>${esc(act || trj || "")}</strong><small>${esc(nuit)}</small></span></button>`).join("")}`);
   sh.querySelectorAll("[data-resa]").forEach((b) => (b.onclick = () => openResa(S.resas.find((r) => r.id === b.dataset.resa))));
   sh.querySelectorAll("[data-day]").forEach((b) => (b.onclick = () => openDay(b.dataset.day)));
+  // passage d'une étape à l'autre : l'ancienne page part sur le côté, la nouvelle arrive, le véhicule traverse tout l'écran
   const go = (to, d) => { if (!to) return; if (calm()) return openStage(to, d);
     const a = d === "next" ? id : to, b = d === "next" ? to : id, leg = LEGS.find((l) => l[0] === a && (l[1] === b || (b === "kl2" && l[1] === "kl1"))) || LEGS.find((l) => l[1] === b);
-    const ov = document.createElement("div"); ov.className = "legtrans " + d;
-    ov.innerHTML = `<div class="ltin" style="--c:${COUNTRIES[stageById[to].c].color}"><b class="lta">${esc(legName(d === "next" ? id : to))}</b><span class="ltline"><span class="ltveh">${VEH[leg?.[2]] || "🚄"}</span></span><b class="ltb">${esc(legName(d === "next" ? to : id))}</b>${leg ? `<small>≈ ${legKm(leg).toLocaleString("fr-FR")} km${leg[4] ? " · de nuit" : ""}</small>` : ""}</div>`;
-    document.body.appendChild(ov);
-    setTimeout(() => { openStage(to, d); setTimeout(() => ov.remove(), 60); }, 1100); };
+    const old = sh.querySelector(".sheet-body"), r = old.getBoundingClientRect(), top0 = old.scrollTop;
+    const ghost = old.cloneNode(true); ghost.classList.remove("turn-next", "turn-prev", "turn-in-next", "turn-in-prev"); ghost.classList.add("ghost", "out-" + d);
+    Object.assign(ghost.style, { position: "fixed", left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px", maxHeight: "none", margin: "0", zIndex: 25 });
+    document.body.appendChild(ghost); ghost.scrollTop = top0;
+    const veh = document.createElement("div"); veh.className = "travveh " + d; veh.style.top = Math.max(r.top + 120, 140) + "px"; veh.style.setProperty("--c", COUNTRIES[stageById[to].c].color);
+    veh.innerHTML = `<span class="trail"></span><span class="v">${VEH[leg?.[2]] || "🚄"}</span>${leg ? `<span class="vkm">≈ ${legKm(leg).toLocaleString("fr-FR")} km</span>` : ""}`;
+    document.body.appendChild(veh);
+    openStage(to, "in-" + d);
+    setTimeout(() => { ghost.remove(); veh.remove(); }, 1500); };
   sh.querySelectorAll("[data-snav]").forEach((b) => (b.onclick = () => go(b.dataset.snav, b.dataset.dir)));
   bindShow(sh);
   const body = sh.querySelector(".sheet-body"); if (dir && !calm()) body.classList.add("turn-" + dir);
