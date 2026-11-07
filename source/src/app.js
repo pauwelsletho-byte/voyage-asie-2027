@@ -198,7 +198,7 @@ function resaCard(r) {
   </button>`;
 }
 
-function stageBlock(st, iso) {
+function stageBlock(st, iso, opt = {}) {
   if (!st) return "";
   const c = COUNTRIES[st.c];
   const hotels = hotelsFor(st);
@@ -208,8 +208,8 @@ function stageBlock(st, iso) {
     <h2>${esc(st.name)}</h2>
     <p class="muted">${esc(fmt(st.from))} → ${esc(fmt(st.to))} · ${daysBetween(st.from, st.to)} ${daysBetween(st.from, st.to) > 1 ? "nuits" : "nuit"}</p>
     ${wxLine(st)}
-    <h3>À faire</h3><ul>${st.todo.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
-    ${guideFor(st.id).length ? `<h3>Le programme en détail</h3><div class="guide">${guideFor(st.id).map((g) => guideItem(st, g, false)).join("")}</div>` : ""}
+    ${opt.noGuide ? "" : guideFor(st.id).length ? `<h3>Le programme en détail</h3><div class="guide">${guideFor(st.id).map((g) => guideItem(st, g, false)).join("")}</div>`
+      : `<h3>À faire</h3><ul>${st.todo.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>`}
     <h3>Où dormir</h3><p>${esc(st.sleep)}</p>
     ${hotels.length ? hotels.map(resaCard).join("") : ""}
     ${(() => { const g = foodsForStage(st.id); return g ? `<h3>À goûter</h3><p class="foodline">${g.items.map(([fr]) => esc(fr)).join(" · ")}</p>` : ""; })()}
@@ -635,7 +635,9 @@ function openDay(iso) {
     ${dayBlock(iso)}
     ${(() => { const g = guideOnDay(iso); return g.length ? `<h2 class="sect">Au programme</h2><div class="card guide">${g.map(([sid, it]) => guideItem(stageById[sid], it, true)).join("")}</div>` : ""; })()}
     ${resasOn(iso).map(resaCard).join("")}
-    ${stageBlock(st, iso)}`);
+    ${stageBlock(st, iso, { noGuide: guideOnDay(iso).length > 0 })}
+    ${st && guideOnDay(iso).length ? `<button class="btn wide" data-stage="${st.id}">Tout le programme de l'étape ›</button>` : ""}`);
+  sh.querySelectorAll("[data-stage]").forEach((b) => (b.onclick = () => openStage(b.dataset.stage)));
   sh.querySelectorAll("[data-journal]").forEach((b) => (b.onclick = () => openJournal(b.dataset.journal)));
   hydrateThumbs(sh);
   sh.querySelectorAll("[data-resa]").forEach((b) => (b.onclick = () => openResa(S.resas.find((r) => r.id === b.dataset.resa))));
