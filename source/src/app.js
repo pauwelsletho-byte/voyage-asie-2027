@@ -4,6 +4,7 @@ import { landscape, MOTIFS, TOOL_ICONS } from "./decor.js";
 import { FOODS, foodId, foodsForStage } from "./food.js";
 import { MAP_W, MAP_H, LAND, VISITED, PTS, LL } from "./mapdata.js";
 import { TIPS, APPS } from "./tips.js";
+import { guideFor, guideOnDay } from "./guide.js";
 import { pdfText, parseConfirmation } from "./pdfread.js";
 import { LEGS, legKm } from "./stats.js";
 import { WMO, cachedForecast, fetchForecast, fetchClimateAll, cachedClimate, cachedAlerts, fetchAlerts, kmBetween } from "./weather.js";
@@ -208,12 +209,22 @@ function stageBlock(st, iso) {
     <p class="muted">${esc(fmt(st.from))} → ${esc(fmt(st.to))} · ${daysBetween(st.from, st.to)} ${daysBetween(st.from, st.to) > 1 ? "nuits" : "nuit"}</p>
     ${wxLine(st)}
     <h3>À faire</h3><ul>${st.todo.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
+    ${guideFor(st.id).length ? `<h3>Le programme en détail</h3><div class="guide">${guideFor(st.id).map((g) => guideItem(st, g, false)).join("")}</div>` : ""}
     <h3>Où dormir</h3><p>${esc(st.sleep)}</p>
     ${hotels.length ? hotels.map(resaCard).join("") : ""}
     ${(() => { const g = foodsForStage(st.id); return g ? `<h3>À goûter</h3><p class="foodline">${g.items.map(([fr]) => esc(fr)).join(" · ")}</p>` : ""; })()}
     ${showList(st)}
     ${st.tip ? `<p class="tip">${esc(st.tip)}</p>` : ""}
   </section>`;
+}
+
+// Une fiche « lieu ou activité » dépliable
+function guideItem(st, [day, name, loc, what, how], open) {
+  const lang = LANG_OF_COUNTRY[st.c] || "";
+  const locMain = (loc || "").split(" · ")[0];
+  return `<details class="gitem" ${open ? "open" : ""} style="--c:${COUNTRIES[st.c].color}"><summary>${day ? `<small>${esc(fmt(day, { weekday: "short", day: "numeric", month: "short" }))}</small>` : ""}<b>${esc(name)}</b></summary>
+    <div class="gbody">${loc ? `<div class="gloc"><button class="showitem" data-show-loc="${esc(locMain)}" data-show-fr="${esc(name)}" data-show-lang="${lang}"><span class="loc">${esc(loc)}</span><small>à montrer</small></button>${lang && /[^\x00-\x7F]/.test(locMain) ? playBtn(locMain, lang) : ""}${goBtn(locMain, name, st.id)}</div>` : ""}
+      <p>${esc(what)}</p>${how ? `<p class="ghow">ℹ️ ${esc(how)}</p>` : ""}</div></details>`;
 }
 
 function dayBlock(iso) {
@@ -621,7 +632,9 @@ function closeSheet() { const sh = $("#sheet"); sh.hidden = true; sh.innerHTML =
 function openDay(iso) {
   const st = stageById[dayRow(iso)?.[1]] || stageOn(iso);
   const sh = openSheet(`<div class="sheet-head"><h2>${esc(fmtLong(iso))}</h2><button class="x" data-close aria-label="Fermer">✕</button></div>
-    ${dayBlock(iso)}${resasOn(iso).map(resaCard).join("")}
+    ${dayBlock(iso)}
+    ${(() => { const g = guideOnDay(iso); return g.length ? `<h2 class="sect">Au programme</h2><div class="card guide">${g.map(([sid, it]) => guideItem(stageById[sid], it, true)).join("")}</div>` : ""; })()}
+    ${resasOn(iso).map(resaCard).join("")}
     ${stageBlock(st, iso)}`);
   sh.querySelectorAll("[data-journal]").forEach((b) => (b.onclick = () => openJournal(b.dataset.journal)));
   hydrateThumbs(sh);

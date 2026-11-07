@@ -379,3 +379,20 @@ input.filled, textarea.filled { border-color: var(--accent); background: color-m
 .hrow:last-child { border-bottom: 0; }
 .hh { color: var(--muted); font-variant-numeric: tabular-nums; } .hrow .wxe { font-size: 20px; } .hp { color: #2B8597; } .hw { color: var(--muted); font-size: 13px; }
 .card.list .wxrowd { padding-left: 14px; padding-right: 12px; } .card.list:has(.wxrowd) { padding: 0; }
+/* programme détaillé */
+.guide { display: grid; gap: 0; }
+.gitem { border-top: 1px solid var(--line); padding: 10px 0; }
+.guide .gitem:first-child { border-top: 0; }
+.gitem summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 1fr 16px; gap: 2px 8px; align-items: center; }
+.gitem summary::-webkit-details-marker { display: none; }
+.gitem summary::after { content: "›"; grid-column: 2; grid-row: 1 / span 2; color: var(--muted); font-size: 20px; transition: transform .2s; }
+.gitem[open] summary::after { transform: rotate(90deg); }
+.gitem summary small { color: var(--c); font-weight: 700; font-size: 12px; text-transform: capitalize; }
+.gitem summary b { font-weight: 600; }
+.gbody { padding-top: 8px; }
+.gbody p { margin: 6px 0; font-size: 15px; line-height: 1.45; }
+.gbody .ghow { font-size: 14px; color: var(--muted); background: var(--soft); border-radius: 10px; padding: 8px 10px; }
+.gloc { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
+.gloc .showitem { padding: 6px 10px; }
+.gloc .showitem .loc { font-size: 17px; }
+.card.guide { padding-top: 4px; padding-bottom: 4px; }
