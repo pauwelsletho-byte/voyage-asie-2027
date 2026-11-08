@@ -93,7 +93,7 @@ function noVoice(btn, lang) {
 const playBtn = (text, lang) => `<button type="button" class="play" data-say="${esc(text)}" data-lang="${esc(lang)}" aria-label="Écouter"><svg viewBox="0 0 24 24">${TOOL_ICONS.play}</svg></button>`;
 
 async function boot() {
-  splash();
+  introMap();
   await initStore();
   window.addEventListener("online", () => setSync()); window.addEventListener("offline", () => setSync());
   store().onAuth((u) => { S.user = u; u ? startData() : renderLogin(); });
@@ -416,6 +416,24 @@ setInterval(() => { if (S.tab === "today" && !document.body.classList.contains("
 let mapT0 = 0;
 const VEH = { train: "🚄", vol: "✈️", bateau: "⛴️", bus: "🚌", moto: "🏍️" };
 
+/* ---------- ouverture de l'appli : le trajet se dessine sur la carte ---------- */
+function introMap() {
+  try { if (calm() || sessionStorage.getItem("intro")) return; sessionStorage.setItem("intro", "1"); } catch { return; }
+  const segs = [];
+  for (let i = 1; i < ROUTE.length; i++) {
+    const fly = ROUTE[i].startsWith("✈"), id = ROUTE[i].replace("✈", ""), a = PTS[ROUTE[i - 1].replace("✈", "")], b = PTS[id];
+    const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, dx = b[0] - a[0], dy = b[1] - a[1], k = fly ? 0.18 : 0.08;
+    segs.push(`<path d="M${a} Q${mx - dy * k},${my + dx * k} ${b}" pathLength="1" class="iseg ${fly ? "fly" : ""}" style="--c:${COUNTRIES[stageById[id]?.c || "fr"].color};--i:${i}"/>`);
+  }
+  const dots = MAP_STAGES.map((st, i) => `<circle cx="${PTS[st.id][0]}" cy="${PTS[st.id][1]}" r="6" class="idot" style="--c:${COUNTRIES[st.c].color};--i:${i}"/>`).join("");
+  const el = document.createElement("div"); el.className = "intro";
+  el.innerHTML = `<svg viewBox="0 0 ${MAP_W} ${MAP_H}" class="introsvg" aria-hidden="true"><rect width="${MAP_W}" height="${MAP_H}" class="sea"/><path d="${LAND}" class="land"/>
+    ${Object.entries(VISITED).map(([c, d]) => `<path d="${d}" class="land v" style="--c:${COUNTRIES[c].color}"/>`).join("")}${segs.join("")}${dots}</svg><p class="introt">Asie, été 2027</p>`;
+  el.onclick = () => el.classList.add("out");
+  document.documentElement.appendChild(el);
+  setTimeout(() => el.classList.add("out"), 3700); setTimeout(() => el.remove(), 4300);
+}
+
 /* ---------- carte du parcours ---------- */
 const ROUTE = ["hongkong", "zhangjiajie", "fenghuang", "huangguoshu", "kunming", "gorges", "shangrila", "dali", "kunming",
   "✈hanoi", "croisiere", "ninhbinh", "puluong", "ninhbinh", "phongnha", "hoian", "quynhon", "hcmc", "✈siemreap", "✈kl1", "tioman", "kl2"];
@@ -449,7 +467,7 @@ function tripMap(t) {
     veh = `<g class="veh"><text font-size="15" text-anchor="middle" y="5">${VEH[leg[2]] || "🚄"}<animateMotion dur="6s" repeatCount="indefinite" path="M${a} Q${mx - dy * k},${my + dx * k} ${b}"/></text></g>`; }
   // le tracé se dessine à chaque ouverture de l'appli, juste après l'écran d'accueil (et continue si l'écran se rafraîchit)
   let drawCls = "", drawStyle = "";
-  if (!calm()) { mapT0 ||= performance.now(); const el = performance.now() - mapT0; if (el < 6000) { drawCls = "draw"; drawStyle = `--el:${Math.round(el)}ms`; } }
+  // (le tracé animé se fait maintenant à l'ouverture de l'appli)
   // avant et après le voyage : une petite valise parcourt tout l'itinéraire en boucle
   let tour = "";
   if (!calm() && (t < TRIP.start || t > TRIP.end)) {
