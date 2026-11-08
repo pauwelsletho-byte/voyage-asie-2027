@@ -470,7 +470,7 @@ function tripMap(t) {
   // (le tracé animé se fait maintenant à l'ouverture de l'appli)
   // avant et après le voyage : une petite valise parcourt tout l'itinéraire en boucle
   let tour = "";
-  if (!calm() && (t < TRIP.start || t > TRIP.end)) {
+  if (false && !calm() && (t < TRIP.start || t > TRIP.end)) {
     let d = "";
     for (let i = 1; i < ROUTE.length; i++) { const a = PTS[ROUTE[i - 1].replace("✈", "")], b = PTS[ROUTE[i].replace("✈", "")], fly = ROUTE[i].startsWith("✈"), mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, dx = b[0] - a[0], dy = b[1] - a[1], k = fly ? 0.18 : 0.08;
       d += (i === 1 ? `M${a}` : "") + ` Q${mx - dy * k},${my + dx * k} ${b}`; }
