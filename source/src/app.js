@@ -431,7 +431,7 @@ function introMap() {
     ${Object.entries(VISITED).map(([c, d]) => `<path d="${d}" class="land v" style="--c:${COUNTRIES[c].color}"/>`).join("")}${segs.join("")}${dots}</svg><p class="introt">Asie, été 2027</p>`;
   el.onclick = () => el.classList.add("out");
   document.documentElement.appendChild(el);
-  setTimeout(() => el.classList.add("out"), 3700); setTimeout(() => el.remove(), 4300);
+  setTimeout(() => el.classList.add("out"), 1450); setTimeout(() => el.remove(), 1850);
 }
 
 /* ---------- carte du parcours ---------- */
