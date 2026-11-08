@@ -732,7 +732,7 @@ function openDay(iso, dir) {
   const sh = openSheet(`<div class="sheet-head"><div class="daynav">${prev ? `<button class="x" data-dnav="${prev}" aria-label="Jour précédent">‹</button>` : ""}<h2>${esc(fmtLong(iso))}</h2>${next ? `<button class="x" data-dnav="${next}" aria-label="Jour suivant">›</button>` : ""}</div><button class="x" data-close aria-label="Fermer">✕</button></div>
     ${top}
     ${dayBlock(iso)}
-    ${(() => { const g = guideOnDay(iso); return g.length ? `<h2 class="sect">Au programme</h2><div class="card guide">${g.map(([sid, it]) => guideItem(stageById[sid], it, true)).join("")}</div>` : ""; })()}
+    ${(() => { const g = guideOnDay(iso); return g.length ? `<h2 class="sect">Au programme</h2><div class="card guide">${g.map(([sid, it]) => guideItem(stageById[sid], it, false)).join("")}</div>` : ""; })()}
     ${resasOn(iso).map(resaCard).join("")}
     ${stageBlock(st, iso, { noGuide: guideOnDay(iso).length > 0 })}
     ${st && guideOnDay(iso).length ? `<button class="btn wide" data-stage="${st.id}">Tout le programme de l'étape ›</button>` : ""}`);
