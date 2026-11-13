@@ -1,8 +1,8 @@
-// Itinéraire du voyage Asie 2027 (version du 27 octobre 2026)
+// Itinéraire du voyage Asie 2027 (version du 14 novembre 2026)
 export const TRIP = {
   title: "Asie, été 2027",
-  start: "2027-06-27",
-  end: "2027-08-20",
+  start: "2027-06-25",
+  end: "2027-08-19",
 };
 
 export const COUNTRIES = {
@@ -16,13 +16,13 @@ export const COUNTRIES = {
 
 // Étapes (une par lieu de nuit)
 export const STAGES = [
-  { id: "hongkong", c: "hk", name: "Hong Kong", from: "2027-06-28", to: "2027-06-30",
+  { id: "hongkong", c: "hk", name: "Hong Kong", from: "2027-06-26", to: "2027-06-29",
     sleep: "Kowloon, quartier Jordan ou Austin (près de la gare de West Kowloon)",
     todo: ["Lantau : téléphérique Ngong Ping, Grand Bouddha, village de Tai O", "Dragon's Back ou île de Lamma", "Dim sum, Sheung Wan, temple Man Mo, marchés de Mong Kok", "Le Peak au coucher du soleil, Star Ferry, Temple Street"],
-    tip: "Carte Octopus pour tous les transports. Être à West Kowloon vers 7 h 15 le 30 (immigration chinoise dans la gare)." },
-  { id: "zhangjiajie", c: "cn", name: "Zhangjiajie", from: "2027-06-30", to: "2027-07-03",
-    sleep: "1 nuit en ville près du téléphérique de Tianmen, puis 2 nuits à Wulingyuan",
-    todo: ["Jeudi : mont Tianmen (téléphérique, porte du Ciel, passerelles de verre)", "Ruisseau Golden Whip et salamandre géante (musée de Wulingyuan)", "Vendredi : Yuanjiajie et les pitons « Avatar », ascenseur Bailong, Tianzi Shan", "Samedi matin : pont de verre du Grand Canyon (option)"],
+    tip: "Carte Octopus pour tous les transports. Être à West Kowloon vers 7 h 15 le 29 (immigration chinoise dans la gare)." },
+  { id: "zhangjiajie", c: "cn", name: "Zhangjiajie", from: "2027-06-29", to: "2027-07-03",
+    sleep: "1 nuit en ville près du téléphérique de Tianmen, puis 2 nuits à Wulingyuan, + la nuit bonus du 2 juillet (à décider)",
+    todo: ["Mercredi : mont Tianmen (téléphérique, porte du Ciel, passerelles de verre)", "Ruisseau Golden Whip et salamandre géante (musée de Wulingyuan)", "Jeudi : Yuanjiajie et les pitons « Avatar », ascenseur Bailong, Tianzi Shan", "Vendredi : journée bonus (Furong Zhen, encore du parc, ou nuit placée ailleurs dans le voyage)", "Samedi matin : pont de verre du Grand Canyon (option)"],
     tip: "Billets nominatifs (passeport) à réserver quelques jours avant sur Trip.com, réservation obligatoire pour chaque jour dans le parc. Parc dès l'ouverture, 7 h." },
   { id: "fenghuang", c: "cn", name: "Fenghuang", from: "2027-07-03", to: "2027-07-05",
     sleep: "Auberge dans la vieille ville, balcon sur la rivière (éviter la rive des bars)",
@@ -92,20 +92,22 @@ export const STAGES = [
     sleep: "Chalet en bord de plage à Salang ou Air Batang",
     todo: ["PADI Open Water du jeudi au samedi", "Snorkeling à Renggis", "Randonnée Tekek → Juara", "Plage et hamac"],
     tip: "Pas de plongée le matin du départ de l'île." },
-  { id: "kl2", c: "my", name: "Kuala Lumpur", from: "2027-08-17", to: "2027-08-19",
+  { id: "kl2", c: "my", name: "Kuala Lumpur", from: "2027-08-17", to: "2027-08-18",
     sleep: "Hôtel avec piscine sur le toit, Bukit Bintang ou KLCC",
     todo: ["Tours Petronas et fontaines du KLCC", "Grottes de Batu", "Chinatown, Jalan Alor", "Dernier verre sur un rooftop"],
-    tip: "Vol de nuit le 19, arrivée à Nice le 20. Mariage le 21 !" },
+    tip: "Check-out le 18 au matin, sacs gardés à l'hôtel. KLIA Ekspres vers 22 h pour le vol de 2 h. Arrivée à Nice le 19 vers 13 h, mariage le 21 !" },
 ];
 
 // Jour par jour : [date, stageId (nuit), trajets, activités, nuit]
 export const DAYS = [
-  ["2027-06-27", null, "Vol de nuit Nice → Hong Kong", "Départ", "En avion"],
-  ["2027-06-28", "hongkong", "Bus S1 + téléphérique depuis l'aéroport, métro vers Kowloon", "Lantau, Grand Bouddha, Tai O. Temple Street le soir", "Hong Kong"],
-  ["2027-06-29", "hongkong", "Métro, ferry", "Dragon's Back ou Lamma, dim sum, le Peak, Star Ferry", "Hong Kong"],
-  ["2027-06-30", "zhangjiajie", "Train G6080 West Kowloon 08:07 → Zhangjiajie-Ouest 14:49", "Balade en ville, dîner tujia", "Zhangjiajie (ville)"],
-  ["2027-07-01", "zhangjiajie", "Téléphérique, bus pour Wulingyuan (45 min)", "Mont Tianmen, Golden Whip, salamandre géante", "Wulingyuan"],
-  ["2027-07-02", "zhangjiajie", "Navettes du parc", "Yuanjiajie, ascenseur Bailong, Tianzi Shan", "Wulingyuan"],
+  ["2027-06-25", null, "Vol du soir Nice → Hong Kong", "Départ", "En avion"],
+  ["2027-06-26", "hongkong", "Arrivée le soir, Airport Express jusqu'à Kowloon (25 min)", "Installation, premier dîner. Temple Street si la forme le permet", "Hong Kong"],
+  ["2027-06-27", "hongkong", "Bus S1 + téléphérique, métro", "Lantau, Grand Bouddha, Tai O. Temple Street le soir", "Hong Kong"],
+  ["2027-06-28", "hongkong", "Métro, ferry", "Dragon's Back ou Lamma, dim sum, le Peak, Star Ferry", "Hong Kong"],
+  ["2027-06-29", "zhangjiajie", "Train G6080 West Kowloon 08:07 → Zhangjiajie-Ouest 14:49", "Balade en ville, dîner tujia", "Zhangjiajie (ville)"],
+  ["2027-06-30", "zhangjiajie", "Téléphérique, bus pour Wulingyuan (45 min)", "Mont Tianmen, Golden Whip, salamandre géante", "Wulingyuan"],
+  ["2027-07-01", "zhangjiajie", "Navettes du parc", "Yuanjiajie, ascenseur Bailong, Tianzi Shan", "Wulingyuan"],
+  ["2027-07-02", "zhangjiajie", "Selon le choix (Furong Zhen : 23 min de train)", "Journée bonus à décider : Furong Zhen, encore du parc, ou nuit placée ailleurs dans le voyage", "Nuit bonus (à décider)"],
   ["2027-07-03", "fenghuang", "Train Zhangjiajie → Fenghuang (1 h)", "Pont de verre en option. Illuminations de Fenghuang", "Fenghuang"],
   ["2027-07-04", "fenghuang", "À pied", "Vieille ville, barque, villages miao", "Fenghuang"],
   ["2027-07-05", "huangguoshu", "Départ tôt : trains via Huaihua et Guiyang jusqu'à Anshun (4-5 h), bus (1 h)", "Grande cascade l'après-midi", "Huangguoshu"],
@@ -152,23 +154,22 @@ export const DAYS = [
   ["2027-08-15", "tioman", "", "Journée libre", "Tioman"],
   ["2027-08-16", "tioman", "Taxi 4×4", "Randonnée vers Juara (pas de plongée)", "Tioman"],
   ["2027-08-17", "kl2", "Ferry + bus → Kuala Lumpur (8-9 h)", "", "Kuala Lumpur"],
-  ["2027-08-18", "kl2", "Métro", "Petronas, Batu, Chinatown", "Kuala Lumpur"],
-  ["2027-08-19", null, "KLIA Ekspres, vol de nuit → Nice", "Dernières balades", "En avion"],
-  ["2027-08-20", null, "Arrivée à Nice", "", "Chez vous"],
+  ["2027-08-18", null, "Check-out, sacs à l'hôtel. KLIA Ekspres vers 22 h, vol à 2 h", "Petronas, Batu, Chinatown, dernier verre", "En avion"],
+  ["2027-08-19", null, "Arrivée à Nice vers 13 h", "", "Chez vous"],
 ];
 
 // Réservations à faire (créées une fois au premier lancement)
 // type : vol, train, bus, hotel, activite, moto, admin
 export const SEED_RESAS = [
-  ["vol", "Vol Nice → Hong Kong", "2027-06-27", "Vol de nuit, escale sur le même billet", "repere", "430 €"],
-  ["vol", "Vol Kuala Lumpur → Nice", "2027-08-19", "Départ le soir, arrivée le 20 au matin", "repere", "449 €"],
-  ["admin", "Assurance voyage", "2027-06-27", "Annulation, santé, rapatriement", "a_reserver", ""],
-  ["hotel", "Hôtel Hong Kong (2 nuits)", "2027-06-28", "Jordan ou Austin", "a_reserver", "100-150 €/nuit"],
-  ["train", "Train G6080 Hong Kong → Zhangjiajie-Ouest", "2027-06-30", "08:07 → 14:49, ventes ~15 jours avant", "a_reserver", "≈ 100 €"],
-  ["hotel", "Hôtel Zhangjiajie ville (1 nuit)", "2027-06-30", "Près du téléphérique de Tianmen", "a_reserver", ""],
-  ["activite", "Mont Tianmen (billet nominatif)", "2027-07-01", "Réserver 3-4 jours avant", "a_reserver", "35-40 €"],
-  ["hotel", "Guesthouse Wulingyuan (2 nuits)", "2027-07-01", "Près de l'entrée du parc", "a_reserver", ""],
-  ["activite", "Parc de Wulingyuan (billet 4 jours)", "2027-07-02", "Billet nominatif", "a_reserver", "≈ 30 €"],
+  ["vol", "Vol Nice → Hong Kong", "2027-06-25", "Départ le 25 au soir, arrivée le 26 au soir", "repere", "430 €"],
+  ["vol", "Vol Kuala Lumpur → Nice", "2027-08-19", "Départ à 2 h (nuit du 18 au 19), arrivée à Nice vers 13 h", "repere", "449 €"],
+  ["admin", "Assurance voyage", "2027-06-25", "Annulation, santé, rapatriement", "a_reserver", ""],
+  ["hotel", "Hôtel Hong Kong (3 nuits)", "2027-06-26", "Jordan ou Austin", "a_reserver", "100-150 €/nuit"],
+  ["train", "Train G6080 Hong Kong → Zhangjiajie-Ouest", "2027-06-29", "08:07 → 14:49, ventes ~15 jours avant", "a_reserver", "≈ 100 €"],
+  ["hotel", "Hôtel Zhangjiajie ville (1 nuit)", "2027-06-29", "Près du téléphérique de Tianmen", "a_reserver", ""],
+  ["activite", "Mont Tianmen (billet nominatif)", "2027-06-30", "Réserver 3-4 jours avant", "a_reserver", "35-40 €"],
+  ["hotel", "Guesthouse Wulingyuan (2 nuits)", "2027-06-30", "Près de l'entrée du parc. +1 nuit le 2 juillet si la nuit bonus se passe ici", "a_reserver", ""],
+  ["activite", "Parc de Wulingyuan (billet 4 jours)", "2027-07-01", "Billet nominatif", "a_reserver", "≈ 30 €"],
   ["train", "Train Zhangjiajie → Fenghuang", "2027-07-03", "Début d'après-midi", "a_reserver", "8-12 €"],
   ["hotel", "Auberge Fenghuang (2 nuits)", "2027-07-03", "Vue sur la rivière", "a_reserver", ""],
   ["train", "Trains Fenghuang → Anshun", "2027-07-05", "Départ tôt, via Huaihua et Guiyang", "a_reserver", "35-45 €"],
@@ -205,11 +206,11 @@ export const SEED_RESAS = [
   ["bus", "Bus TBS → Mersing + ferry Tioman", "2027-08-11", "Selon les marées", "a_reserver", "≈ 25 €"],
   ["activite", "PADI Open Water", "2027-08-12", "Théorie en ligne avant le départ", "a_reserver", "280-350 €"],
   ["hotel", "Chalet Tioman (6 nuits)", "2027-08-11", "Salang ou Air Batang", "a_reserver", ""],
-  ["hotel", "Hôtel Kuala Lumpur (2 nuits)", "2027-08-17", "Piscine sur le toit", "a_reserver", ""],
+  ["hotel", "Hôtel Kuala Lumpur (1 nuit)", "2027-08-17", "Piscine sur le toit. Check-out le 18, sacs gardés à l'hôtel", "a_reserver", ""],
 ];
 
 export const CHECKLIST = [
-  ["avant", "Confirmer le départ du 27 juin"],
+  ["avant", "Confirmer le départ du 25 juin"],
   ["avant", "Passeports valables jusqu'à fin février 2028, 2 pages vierges"],
   ["avant", "Alertes de prix sur les vols"],
   ["avant", "Permis international (ANTS), catégorie A"],

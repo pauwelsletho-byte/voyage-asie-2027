@@ -99,11 +99,20 @@ async function boot() {
   store().onAuth((u) => { S.user = u; u ? startData() : renderLogin(); });
 }
 
+// Nouvelles dates (vols du 25 juin et du 19 août) : fiches déjà créées à mettre à jour une fois
+const DATE_PATCH = [[0, "Vol Nice → Hong Kong", "Vol de nuit, escale sur le même billet"], [1, "Vol Kuala Lumpur → Nice", "Départ le soir, arrivée le 20 au matin"],
+  [2, "Assurance voyage"], [3, "Hôtel Hong Kong (2 nuits)"], [4, "Train G6080 Hong Kong → Zhangjiajie-Ouest"], [5, "Hôtel Zhangjiajie ville (1 nuit)"],
+  [6, "Mont Tianmen (billet nominatif)"], [7, "Guesthouse Wulingyuan (2 nuits)", "Près de l'entrée du parc"], [8, "Parc de Wulingyuan (billet 4 jours)"],
+  [45, "Hôtel Kuala Lumpur (2 nuits)", "Piscine sur le toit"]];
+
 function startData() {
   S.unsubs.forEach((f) => f && f()); S.unsubs = [];
   renderShell();
   const seed = { resas: SEED_RESAS.map((r, i) => ({ id: "seed-" + String(i).padStart(2, "0") + "-" + slug(r[1]), type: r[0], title: r[1], date: r[2], notes: r[3], status: r[4], price: r[5], files: [] })), vault: VAULT_SEED.map((v) => ({ ...v, files: [] })) };
-  store().seedIfNeeded(seed).catch(() => {});
+  store().seedIfNeeded(seed).catch(() => {}).then(() => store().migrate("dates-2026-11-14", DATE_PATCH.map(([i, oldTitle, oldNotes]) => {
+    const r = SEED_RESAS[i];
+    return { coll: "resas", id: "seed-" + String(i).padStart(2, "0") + "-" + slug(oldTitle), data: { title: r[1], date: r[2] }, ifSame: oldNotes ? { notes: [oldNotes, r[3]] } : {} };
+  }))).catch(() => {});
   S.unsubs.push(store().subscribe("resas", (items, m) => { if (items) S.resas = items; setSync(m); render(); }));
   S.unsubs.push(store().subscribe("checks", (items) => { if (items) S.checks = items; render(); }));
   S.unsubs.push(store().subscribe("expenses", (items) => { if (items) S.expenses = items; render(); }));
@@ -398,10 +407,10 @@ function moments() {
   if (S.tab !== "today" || !S.user) return;
   const t = todayIso(); if (t < TRIP.start || t > TRIP.end) return;
   const kmAll = LEGS.reduce((a, l) => a + legKm(l), 0), food = (S.food || []).filter((f) => f.done).length;
-  if (t === TRIP.start) return moment({ key: "go-" + t, emoji: "✈️", title: "C'est parti !", text: `55 jours, 5 pays, ${kmAll.toLocaleString("fr-FR")} km. Bon vol jusqu'à Hong Kong.` });
-  if (t === "2027-07-24") return moment({ key: "mid-" + t, emoji: "🌗", title: "La moitié du voyage !", text: `Jour 28 sur 55.${food ? ` Déjà ${food} spécialité${food > 1 ? "s" : ""} goûtée${food > 1 ? "s" : ""}.` : ""} Encore le centre du Vietnam, Saigon, Angkor et Tioman devant vous.`, color: "#2F7A52" });
-  if (t === "2027-08-19") return moment({ key: "last-" + t, emoji: "🌇", title: "Dernier soir en Asie", text: `${kmAll.toLocaleString("fr-FR")} km, 5 pays${food ? `, ${food} plats goûtés` : ""}. Un dernier verre face aux tours Petronas ?`, color: "#1C7489" });
-  if (t === TRIP.end) return moment({ key: "back-" + t, emoji: "🏡", title: "Bon retour !", text: "Et bon mariage demain 🥂", color: "#B5810F" });
+  if (t === TRIP.start) return moment({ key: "go-" + t, emoji: "✈️", title: "C'est parti !", text: `${daysBetween(TRIP.start, TRIP.end) + 1} jours, 5 pays, ${kmAll.toLocaleString("fr-FR")} km. Bon vol jusqu'à Hong Kong.` });
+  if (t === "2027-07-22") return moment({ key: "mid-" + t, emoji: "🌗", title: "La moitié du voyage !", text: `Jour 28 sur ${daysBetween(TRIP.start, TRIP.end) + 1}.${food ? ` Déjà ${food} spécialité${food > 1 ? "s" : ""} goûtée${food > 1 ? "s" : ""}.` : ""} Encore le centre du Vietnam, Saigon, Angkor et Tioman devant vous.`, color: "#2F7A52" });
+  if (t === "2027-08-18") return moment({ key: "last-" + t, emoji: "🌇", title: "Dernier soir en Asie", text: `${kmAll.toLocaleString("fr-FR")} km, 5 pays${food ? `, ${food} plats goûtés` : ""}. Un dernier verre face aux tours Petronas ?`, color: "#1C7489" });
+  if (t === TRIP.end) return moment({ key: "back-" + t, emoji: "🏡", title: "Bon retour !", text: "Et bon mariage samedi 🥂", color: "#B5810F" });
   const c = countryOn(t), prev = countryOn(isoOf(new Date(D(t).getTime() - 86400000)));
   if (c !== prev && WELCOME[c]) stampOverlay({ title: "Bienvenue " + WELCOME[c][0], sub: WELCOME[c][1] + " · " + fmt(t), color: COUNTRIES[c].color, big: true, key: "border-" + t });
 }
@@ -580,7 +589,7 @@ function viewToday() {
     const done = S.resas.length - todo.length;
     const checksDone = CHECKLIST.filter((_, i) => S.checks.some((c) => c.id === "c" + i && c.done)).length;
     return `
-    <section class="hero deco">${scene("home", hourIn("Europe/Paris"), "h1")}<div class="hero-in"><p class="kicker">Départ le dimanche 27 juin 2027</p><p class="big" id="jcount">J−${left}</p>
+    <section class="hero deco">${scene("home", hourIn("Europe/Paris"), "h1")}<div class="hero-in"><p class="kicker">Départ le vendredi 25 juin 2027</p><p class="big" id="jcount">J−${left}</p>
       <div class="bars">
         <div><span>Réservations</span><b>${done}/${S.resas.length}</b><i style="--p:${S.resas.length ? done / S.resas.length : 0}"></i></div>
         <div><span>Préparatifs</span><b>${checksDone}/${CHECKLIST.length}</b><i style="--p:${checksDone / CHECKLIST.length}"></i></div>
@@ -1198,7 +1207,7 @@ function viewJournal() {
   const canWrite = t >= TRIP.start && t <= TRIP.end;
   return `<h2 class="sect">Carnet de voyage</h2>
     <section class="card"><p>Chaque jour, une photo ou deux et quelques lignes, chacun de son côté. Le carnet est partagé entre vos deux téléphones.</p>
-      <button class="btn primary wide" data-journal="${canWrite ? t : TRIP.start}">${canWrite ? "Écrire la page d'aujourd'hui" : "Essayer (page du 27 juin)"}</button></section>
+      <button class="btn primary wide" data-journal="${canWrite ? t : TRIP.start}">${canWrite ? "Écrire la page d'aujourd'hui" : "Essayer (page du 25 juin)"}</button></section>
     ${days.map((iso) => `<section class="card jday"><button class="jhead" data-journal="${iso}"><strong>${esc(fmtLong(iso))}</strong><small>${esc((stageOn(iso) || stageById[dayRow(iso)?.[1]] || {}).name || "")}</small></button>${journalBlock(iso)}</section>`).join("")
       || `<p class="muted pad">Le carnet est encore vide. Il se remplira pendant le voyage ; chaque page est aussi accessible depuis le jour correspondant dans l'onglet Jours.</p>`}`;
 }

@@ -2,8 +2,8 @@
 import { LL } from "./mapdata.js";
 const NICE = [43.66, 7.21];
 export const LEGS = [
-  ["nice", "hongkong", "vol", "2027-06-27", 1],
-  ["hongkong", "zhangjiajie", "train", "2027-06-30"],
+  ["nice", "hongkong", "vol", "2027-06-25", 1],
+  ["hongkong", "zhangjiajie", "train", "2027-06-29"],
   ["zhangjiajie", "fenghuang", "train", "2027-07-03"],
   ["fenghuang", "huangguoshu", "train", "2027-07-05"],
   ["huangguoshu", "kunming", "train", "2027-07-06"],
@@ -24,7 +24,7 @@ export const LEGS = [
   ["siemreap", "kl1", "vol", "2027-08-10"],
   ["kl1", "tioman", "bateau", "2027-08-11"],
   ["tioman", "kl2", "bateau", "2027-08-17"],
-  ["kl2", "nice", "vol", "2027-08-19", 1],
+  ["kl2", "nice", "vol", "2027-08-18", 1],
 ];
 const ll = (id) => (id === "nice" ? NICE : LL[id]);
 function hav([a, b], [c, d]) {

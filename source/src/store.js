@@ -17,7 +17,7 @@ async function firebaseStore() {
   const { initializeApp } = await import("firebase/app");
   const {
     initializeFirestore, persistentLocalCache, persistentSingleTabManager, CACHE_SIZE_UNLIMITED,
-    collection, doc, onSnapshot, setDoc, deleteDoc, getDocs, getDocFromServer, writeBatch, Bytes,
+    collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, getDocFromServer, writeBatch, Bytes,
     serverTimestamp,
   } = await import("firebase/firestore");
   const {
@@ -60,6 +60,24 @@ async function firebaseStore() {
       (seed.vault || []).forEach((v) => b.set(doc(db, ...base, "vault", v.id), v));
       b.set(doc(db, ...base, "meta", "seed"), { at: serverTimestamp() });
       await b.commit();
+      return true;
+    },
+    // Mise à jour unique de fiches existantes (ex. changement de dates), sans recréer celles supprimées
+    async migrate(key, patches) {
+      try {
+        const meta = await getDocFromServer(doc(db, ...base, "meta", key));
+        if (meta.exists()) return false;
+      } catch { return false; }
+      for (const p of patches) {
+        try {
+          const ref = doc(db, ...base, p.coll, p.id), cur = await getDocFromServer(ref);
+          if (!cur.exists()) continue;
+          const d = { ...p.data }; // champs modifiés seulement s'ils n'ont pas été retouchés
+          Object.entries(p.ifSame || {}).forEach(([k, [was, now]]) => { if ((cur.data()[k] || "") === was) d[k] = now; });
+          await updateDoc(ref, d);
+        } catch {}
+      }
+      await setDoc(doc(db, ...base, "meta", key), { at: serverTimestamp() });
       return true;
     },
 
@@ -116,6 +134,15 @@ function demoStore() {
       if (state.meta?.seed) return false;
       state.resas ||= {}; seed.resas.forEach((r) => (state.resas[r.id] = r));
       state.meta = { ...(state.meta || {}), seed: { at: Date.now() } }; save(); emit("resas"); return true;
+    },
+    async migrate(key, patches) {
+      if (state.meta?.[key]) return false;
+      patches.forEach((p) => {
+        const cur = state[p.coll]?.[p.id]; if (!cur) return;
+        const d = { ...p.data }; Object.entries(p.ifSame || {}).forEach(([k, [was, now]]) => { if ((cur[k] || "") === was) d[k] = now; });
+        state[p.coll][p.id] = { ...cur, ...d };
+      });
+      state.meta = { ...(state.meta || {}), [key]: Date.now() }; save(); ["resas", "checks"].forEach(emit); return true;
     },
     async saveFile(file) {
       const id = "f" + Date.now().toString(36);

@@ -31,12 +31,12 @@ export const BOOKING = {
   "Vol Nice → Hong Kong": ["2026-12-01", "Décembre à mars, avant avril", ["gflights", "skyscanner"], "Escale sur le même billet, bagage en soute inclus. Alerte de prix dès maintenant."],
   "Vol Kuala Lumpur → Nice": ["2026-12-01", "Décembre à mars, avant avril", ["gflights", "skyscanner"], "Idéalement sur le même billet que l'aller."],
   "Assurance voyage": ["2026-12-01", "Dès l'achat des vols", [], "Annulation, santé, rapatriement, météo. Vérifier d'abord ce que couvre la carte bancaire."],
-  "Hôtel Hong Kong (2 nuits)": ["2027-04-01", "Avril", H_CN, "Annulation gratuite si possible."],
-  "Train G6080 Hong Kong → Zhangjiajie-Ouest": ["2027-06-01", "Demande dès début juin, ventes vers le 15 juin", TR_CN, "Un seul train par jour : déposer la demande sur Trip.com dès début juin, elle part à l'ouverture."],
+  "Hôtel Hong Kong (3 nuits)": ["2027-04-01", "Avril", H_CN, "Annulation gratuite si possible."],
+  "Train G6080 Hong Kong → Zhangjiajie-Ouest": ["2027-06-01", "Demande dès début juin, ventes vers le 14 juin", TR_CN, "Un seul train par jour : déposer la demande sur Trip.com dès début juin, elle part à l'ouverture."],
   "Hôtel Zhangjiajie ville (1 nuit)": ["2027-04-01", "Avril", H_CN, "Vérifier que l'hôtel accepte les étrangers."],
-  "Mont Tianmen (billet nominatif)": ["2027-06-27", "3 ou 4 jours avant", ["trip"], "Billet lié au passeport."],
+  "Mont Tianmen (billet nominatif)": ["2027-06-26", "3 ou 4 jours avant", ["trip"], "Billet lié au passeport."],
   "Guesthouse Wulingyuan (2 nuits)": ["2027-04-01", "Avril", H_CN, "Vérifier que l'hôtel accepte les étrangers."],
-  "Parc de Wulingyuan (billet 4 jours)": ["2027-06-28", "3 ou 4 jours avant", ["trip"], "Billet lié au passeport."],
+  "Parc de Wulingyuan (billet 4 jours)": ["2027-06-27", "3 ou 4 jours avant", ["trip"], "Billet lié au passeport."],
   "Train Zhangjiajie → Fenghuang": ["2027-06-18", "Vers le 18 juin", TR_CN, "Ventes environ 15 jours avant."],
   "Auberge Fenghuang (2 nuits)": ["2027-04-01", "Avril", H_CN, "Chambre avec vue sur la rivière."],
   "Trains Fenghuang → Anshun": ["2027-06-20", "Vers le 20 juin", TR_CN, "Ventes environ 15 jours avant."],
@@ -45,9 +45,9 @@ export const BOOKING = {
   "Train de nuit Y752 Kunming → Lijiang": ["2027-06-21", "Vers le 21 juin", TR_CN, "Couchette molle (soft sleeper)."],
   "Halfway Guesthouse (1 nuit)": ["2027-04-01", "Avril", ["trip", "booking"], "Chambre avec vue, ça part vite en été."],
   "Hôtel Shangri-La (2 nuits)": ["2027-04-01", "Avril", H_CN, ""],
-  "Train Shangri-La → Dali": ["2027-06-25", "Vers le 25 juin", TR_CN, "Ventes environ 15 jours avant."],
+  "Train Shangri-La → Dali": ["2027-06-25", "Vers le 25 juin, le jour du départ", TR_CN, "Ventes environ 15 jours avant."],
   "Guesthouse Dali (2 nuits)": ["2027-04-01", "Avril", H_CN, ""],
-  "Train Dali → Kunming": ["2027-06-27", "Vers le 27 juin, le jour du départ", TR_CN, "Ventes environ 15 jours avant."],
+  "Train Dali → Kunming": ["2027-06-27", "Vers le 27 juin, depuis Hong Kong", TR_CN, "Ventes environ 15 jours avant."],
   "Hôtel Kunming (1 nuit)": ["2027-04-01", "Avril", H_CN, ""],
   "Vol Kunming → Hanoi": ["2027-04-01", "Avril", ["gflights", "vna", "ceair"], ""],
   "Hôtel Hanoi (3 nuits)": ["2027-05-01", "Mai", H, ""],
@@ -73,7 +73,7 @@ export const BOOKING = {
   "Bus TBS → Mersing + ferry Tioman": ["2027-08-04", "Environ 1 semaine avant", ["g12go", "easybook"], "Horaires du ferry selon les marées."],
   "PADI Open Water": ["2027-05-01", "Mai (choisir le centre dès février)", [], "Récupérer le code de la théorie en ligne."],
   "Chalet Tioman (6 nuits)": ["2027-05-01", "Mai", H, "Salang ou Air Batang."],
-  "Hôtel Kuala Lumpur (2 nuits)": ["2027-04-01", "Avril", H, "Piscine sur le toit."],
+  "Hôtel Kuala Lumpur (1 nuit)": ["2027-04-01", "Avril", H, "Piscine sur le toit."],
 };
 
 export function bookingFor(r) {
@@ -87,6 +87,6 @@ export function bookingPeriod(from) {
   if (from < "2027-04-01") return "Décembre 2026 à mars 2027";
   if (from < "2027-05-01") return "Avril 2027";
   if (from < "2027-06-01") return "Mai 2027";
-  if (from < "2027-06-27") return "Juin 2027";
+  if (from < "2027-06-25") return "Juin 2027";
   return "Pendant le voyage";
 }
