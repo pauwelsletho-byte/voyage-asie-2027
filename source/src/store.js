@@ -71,6 +71,7 @@ async function firebaseStore() {
       for (const p of patches) {
         try {
           const ref = doc(db, ...base, p.coll, p.id), cur = await getDocFromServer(ref);
+          if (p.create) { if (!cur.exists()) await setDoc(ref, p.create); continue; }
           if (!cur.exists()) continue;
           const d = { ...p.data }; // champs modifiés seulement s'ils n'ont pas été retouchés
           Object.entries(p.ifSame || {}).forEach(([k, [was, now]]) => { if ((cur.data()[k] || "") === was) d[k] = now; });
@@ -138,6 +139,7 @@ function demoStore() {
     async migrate(key, patches) {
       if (state.meta?.[key]) return false;
       patches.forEach((p) => {
+        if (p.create) { state[p.coll] ||= {}; state[p.coll][p.id] ||= p.create; return; }
         const cur = state[p.coll]?.[p.id]; if (!cur) return;
         const d = { ...p.data }; Object.entries(p.ifSame || {}).forEach(([k, [was, now]]) => { if ((cur[k] || "") === was) d[k] = now; });
         state[p.coll][p.id] = { ...cur, ...d };

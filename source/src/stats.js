@@ -4,7 +4,8 @@ const NICE = [43.66, 7.21];
 export const LEGS = [
   ["nice", "hongkong", "vol", "2027-06-25", 1],
   ["hongkong", "zhangjiajie", "train", "2027-06-29"],
-  ["zhangjiajie", "fenghuang", "train", "2027-07-03"],
+  ["zhangjiajie", "furong", "train", "2027-07-02"],
+  ["furong", "fenghuang", "train", "2027-07-03"],
   ["fenghuang", "huangguoshu", "train", "2027-07-05"],
   ["huangguoshu", "kunming", "train", "2027-07-06"],
   ["kunming", "gorges", "train", "2027-07-06", 1],

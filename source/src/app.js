@@ -99,6 +99,12 @@ async function boot() {
   store().onAuth((u) => { S.user = u; u ? startData() : renderLogin(); });
 }
 
+// Furong Zhen ajouté (nuit bonus du 2 juillet)
+const FURONG_PATCH = [
+  { i: 7, oldTitle: "Guesthouse Wulingyuan (2 nuits)", ifSame: { notes: ["Près de l'entrée du parc. +1 nuit le 2 juillet si la nuit bonus se passe ici", "Près de l'entrée du parc"] } },
+  { i: 9, oldTitle: "Train Zhangjiajie → Fenghuang", data: ["title", "notes", "price"], ifSame: {} },
+  { i: 46, create: true }, { i: 47, create: true },
+];
 // Nouvelles dates (vols du 25 juin et du 19 août) : fiches déjà créées à mettre à jour une fois
 const DATE_PATCH = [[0, "Vol Nice → Hong Kong", "Vol de nuit, escale sur le même billet"], [1, "Vol Kuala Lumpur → Nice", "Départ le soir, arrivée le 20 au matin"],
   [2, "Assurance voyage"], [3, "Hôtel Hong Kong (2 nuits)"], [4, "Train G6080 Hong Kong → Zhangjiajie-Ouest"], [5, "Hôtel Zhangjiajie ville (1 nuit)"],
@@ -112,6 +118,10 @@ function startData() {
   store().seedIfNeeded(seed).catch(() => {}).then(() => store().migrate("dates-2026-11-14", DATE_PATCH.map(([i, oldTitle, oldNotes]) => {
     const r = SEED_RESAS[i];
     return { coll: "resas", id: "seed-" + String(i).padStart(2, "0") + "-" + slug(oldTitle), data: { title: r[1], date: r[2] }, ifSame: oldNotes ? { notes: [oldNotes, r[3]] } : {} };
+  }))).then(() => store().migrate("furong-2026-11-14", FURONG_PATCH.map((p) => {
+    const r = SEED_RESAS[p.i], full = { type: r[0], title: r[1], date: r[2], notes: r[3], status: r[4], price: r[5], files: [] };
+    if (p.create) return { coll: "resas", id: "seed-" + p.i + "-" + slug(r[1]), create: full };
+    return { coll: "resas", id: "seed-" + String(p.i).padStart(2, "0") + "-" + slug(p.oldTitle), data: Object.fromEntries((p.data || []).map((k) => [k, full[k]])), ifSame: p.ifSame };
   }))).catch(() => {});
   S.unsubs.push(store().subscribe("resas", (items, m) => { if (items) S.resas = items; setSync(m); render(); }));
   S.unsubs.push(store().subscribe("checks", (items) => { if (items) S.checks = items; render(); }));
@@ -444,7 +454,7 @@ function introMap() {
 }
 
 /* ---------- carte du parcours ---------- */
-const ROUTE = ["hongkong", "zhangjiajie", "fenghuang", "huangguoshu", "kunming", "gorges", "shangrila", "dali", "kunming",
+const ROUTE = ["hongkong", "zhangjiajie", "furong", "fenghuang", "huangguoshu", "kunming", "gorges", "shangrila", "dali", "kunming",
   "✈hanoi", "croisiere", "ninhbinh", "puluong", "ninhbinh", "phongnha", "hoian", "quynhon", "hcmc", "✈siemreap", "✈kl1", "tioman", "kl2"];
 const MAP_STAGES = STAGES.filter((s) => s.id !== "kl1");
 const LABELS = { hongkong: ["Hong Kong", -6, 18, "end"], zhangjiajie: ["Zhangjiajie", 12, 4], kunming: ["Kunming", 12, 14], hanoi: ["Hanoi", -12, -8, "end"],

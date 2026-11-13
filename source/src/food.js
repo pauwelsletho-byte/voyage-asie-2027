@@ -8,7 +8,7 @@ export const FOODS = [
     ["Tartelette à l'œuf", "蛋撻", "Petite tarte au flan, encore tiède"],
     ["Thé au lait hongkongais", "港式奶茶", "Thé noir fort et lait concentré"],
   ] },
-  { id: "hunan", region: "Hunan (Zhangjiajie, Fenghuang)", c: "cn", lang: "zh-CN", stages: ["zhangjiajie", "fenghuang"], items: [
+  { id: "hunan", region: "Hunan (Zhangjiajie, Fenghuang)", c: "cn", lang: "zh-CN", stages: ["zhangjiajie", "furong", "fenghuang"], items: [
     ["Tête de poisson aux piments", "剁椒鱼头", "Le plat star du Hunan, très relevé"],
     ["Porc braisé façon Mao", "毛氏红烧肉", "Porc caramélisé fondant"],
     ["Tofu puant", "臭豆腐", "Frit et pimenté : l'odeur fait peur, le goût beaucoup moins"],

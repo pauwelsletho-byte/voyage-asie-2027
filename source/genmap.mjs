@@ -16,7 +16,7 @@ for (const f of countries) {
   if (VISITED[n]) visited[VISITED[n]] = (visited[VISITED[n]] || "") + d; else land.push(d);
 }
 const P = {
-  hongkong: [114.17, 22.3], zhangjiajie: [110.48, 29.2], fenghuang: [109.6, 27.95], huangguoshu: [105.67, 25.99],
+  hongkong: [114.17, 22.3], zhangjiajie: [110.48, 29.2], furong: [109.96, 28.83], fenghuang: [109.6, 27.95], huangguoshu: [105.67, 25.99],
   gorges: [100.1, 27.2], shangrila: [99.7, 27.83], dali: [100.16, 25.69], kunming: [102.71, 25.04],
   hanoi: [105.85, 21.03], croisiere: [107.05, 20.75], ninhbinh: [105.97, 20.25], puluong: [105.1, 20.46],
   phongnha: [106.28, 17.59], hoian: [108.33, 15.88], quynhon: [109.22, 13.78], hcmc: [106.7, 10.78],

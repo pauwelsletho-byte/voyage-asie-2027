@@ -109,7 +109,7 @@ const SCENES = {
   },
 };
 const STAGE_SCENE = {
-  hongkong: ["city", "hk"], zhangjiajie: ["karst", "zjj"], fenghuang: ["town", "stilt"], huangguoshu: ["waterfall"], gorges: ["mountains", "gorge"],
+  hongkong: ["city", "hk"], zhangjiajie: ["karst", "zjj"], furong: ["waterfall"], fenghuang: ["town", "stilt"], huangguoshu: ["waterfall"], gorges: ["mountains", "gorge"],
   shangrila: ["mountains", "flags"], dali: ["mountains", "lake"], kunming: ["mountains", "lake"], hanoi: ["temple", "hanoi"], croisiere: ["karst", "sea"],
   ninhbinh: ["karst", "rice"], puluong: ["terraces"], phongnha: ["karst", "river"], hoian: ["town", "hoian"], quynhon: ["beach", "rocks"],
   hcmc: ["city", "hcmc"], siemreap: ["temple", "angkor"], kl1: ["city", "kl"], kl2: ["city", "kl"], tioman: ["beach", "turtle"],

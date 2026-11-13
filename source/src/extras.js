@@ -247,6 +247,7 @@ export const PHRASES = [
 export const LOCAL_PLACES = {
   hongkong: [["Gare de West Kowloon (train pour la Chine)", "西九龍站"], ["Aéroport de Hong Kong", "香港國際機場"]],
   zhangjiajie: [["Gare de Zhangjiajie-Ouest", "张家界西站"], ["Téléphérique du mont Tianmen", "天门山索道"], ["Wulingyuan (entrée du parc)", "武陵源"], ["Grand Canyon de Zhangjiajie", "张家界大峡谷"]],
+  furong: [["Village de Furong Zhen", "芙蓉镇"], ["Gare de Furongzhen", "芙蓉镇站"]],
   fenghuang: [["Vieille ville de Fenghuang", "凤凰古城"], ["Gare de Fenghuang (vieille ville)", "凤凰古城站"]],
   huangguoshu: [["Cascade de Huangguoshu", "黄果树瀑布"], ["Gare d'Anshun-Ouest", "安顺西站"]],
   gorges: [["Gorges du Saut du Tigre", "虎跳峡"], ["Qiaotou (départ du sentier)", "桥头"], ["Halfway Guesthouse", "中途客栈"], ["Gare de Lijiang", "丽江站"]],
