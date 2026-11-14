@@ -1082,10 +1082,11 @@ function viewMoney() {
   let lastD = "";
   return `<section class="hero money coin">
       <p class="kicker">Dépensé à deux, tout compris</p><p class="big"><span data-count="${Math.round(total)}" data-ckey="tot" data-suffix=" €">${money(Math.round(total))}</span></p>
-      ${preTotal ? `<p class="muted small">dont ${money(Math.round(preTotal))} de réservations payées · ${money(Math.round(total - preTotal))} sur place</p>` : ""}
+      ${preTotal ? `<p class="muted small">dont ${money(Math.round(preTotal))} de réservations payées · ${money(Math.round(total - preTotal))} de dépenses au quotidien</p>` : ""}
       <div class="bars"><div><span>Budget ${money(budget)}</span><b>${Math.round((total / budget) * 100)} %</b><i style="--p:${Math.min(1, total / budget)}"></i></div></div>
       <p class="owe">${owe}</p>
     </section>
+    ${resaPayCard()}
     ${budgetDaily(all, budget)}
     ${ex.map((e) => { const h = e.date !== lastD ? `<h2 class="sect">${esc(fmtLong(e.date))}</h2>` : ""; lastD = e.date;
       return h + `<button class="card exp" data-exp="${esc(e.id)}"><span class="emain"><strong>${esc(e.desc || CATEGORIES[e.cat] || "Dépense")}</strong>
@@ -1094,6 +1095,27 @@ function viewMoney() {
       || `<p class="muted pad">Aucune dépense pour l'instant. Touchez + pour ajouter la première, dans n'importe quelle devise.</p>`}`;
 }
 
+// réservations : déjà payé / à payer bientôt / sur place
+const priceEur = (p) => { const m = String(p || "").match(/^[≈~\s]*(\d[\d\s]*)(?:[.,]\d+)?(?:\s*-\s*(\d[\d\s]*))?\s*€(?!\s*\/)/); if (!m) return null;
+  const a = +m[1].replace(/\s/g, ""), b = m[2] ? +m[2].replace(/\s/g, "") : a; return (a + b) / 2; };
+function resaPayCard() {
+  const P = people(), t = todayIso();
+  const paid = S.resas.filter((r) => r.paid > 0).sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+  const soon = S.resas.filter((r) => !(r.paid > 0) && r.payOn && !r.payOnSite).sort((a, b) => a.payOn.localeCompare(b.payOn));
+  const site = S.resas.filter((r) => !(r.paid > 0) && r.payOnSite).sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+  if (!paid.length && !soon.length && !site.length) return "";
+  const sum = (l, f) => l.reduce((t, r) => t + (f(r) || 0), 0);
+  const unknown = (l) => l.some((r) => priceEur(r.price) == null);
+  const row = (r, right, sub) => `<button class="payrow" data-resa="${esc(r.id)}"><span><b>${esc(r.title)}</b><small>${sub}</small></span><span class="pamt">${right}</span></button>`;
+  const grp = (cls, icon, title, list, total, rows, open) => list.length ? `<details class="paygrp ${cls}" ${open ? "open" : ""}><summary><span>${icon} ${title} · ${list.length}</span><b>${total}</b></summary>${rows}</details>` : "";
+  const amt = (r) => priceEur(r.price) != null ? money(Math.round(priceEur(r.price))) : esc(r.price || "?");
+  const total = (l) => (unknown(l) ? "≥ " : "") + money(Math.round(sum(l, (r) => priceEur(r.price))));
+  return `<h2 class="sect">Réservations : où en est l'argent</h2><div class="card paycard">
+    ${grp("paid", "✅", "Déjà payé", paid, money(Math.round(sum(paid, (r) => r.paid))), paid.map((r) => row(r, money(r.paid), `${esc(fmt(r.date))}${r.paidBy ? " · payé par " + esc(P[r.paidBy] || "") : ""}`)).join(""), false)}
+    ${grp("soon", "💳", "À payer bientôt", soon, total(soon), soon.map((r) => row(r, amt(r), `${r.payOn < t ? "⚠️ " : ""}prélevé le ${esc(fmt(r.payOn))}`)).join(""), true)}
+    ${grp("site", "💵", "À payer sur place", site, total(site), site.map((r) => row(r, amt(r), `à l'arrivée, ${esc(fmt(r.date))}`)).join(""), true)}
+  </div>`;
+}
 function openExpense(e) {
   const isNew = !e; const P = people();
   const date = e?.date || (todayIso() < TRIP.start ? TRIP.start : todayIso());

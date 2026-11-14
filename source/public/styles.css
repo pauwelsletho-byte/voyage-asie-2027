@@ -600,3 +600,13 @@ button.card.alert.dl { width: 100%; text-align: left; font: inherit; color: inhe
 .form label.onsite input { width: 22px; height: 22px; flex: none; accent-color: var(--accent); margin: 0; padding: 0; }
 .form label.onsite small { font-weight: 400; color: var(--muted); }
 .form input:disabled { opacity: .45; }
+/* dépenses : état des paiements des réservations */
+.paycard { padding: 4px 14px; }
+.paygrp { border-bottom: 1px solid var(--line); }
+.paygrp:last-child { border-bottom: 0; }
+.paygrp > summary { list-style: none; display: flex; justify-content: space-between; align-items: center; padding: 12px 0; cursor: pointer; font-weight: 600; }
+.paygrp > summary::-webkit-details-marker { display: none; }
+.paygrp.soon > summary b { color: #8A5A00; } .paygrp.site > summary b { color: #8A5A00; } .paygrp.paid > summary b { color: var(--accent); }
+.payrow { display: flex; justify-content: space-between; gap: 10px; width: 100%; text-align: left; background: none; border: 0; border-top: 1px dashed var(--line); padding: 9px 0; font: inherit; color: inherit; cursor: pointer; }
+.payrow span:first-child { display: flex; flex-direction: column; } .payrow small { color: var(--muted); font-size: 13px; }
+.payrow .pamt { font-weight: 600; white-space: nowrap; }
