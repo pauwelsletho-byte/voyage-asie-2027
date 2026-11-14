@@ -572,7 +572,7 @@ function openStage(id, dir) {
   const sh = openSheet(`<div class="sheet-head"><div class="daynav">${prev ? `<button class="x" data-snav="${prev}" data-dir="prev" aria-label="Étape précédente">‹</button>` : ""}<h2><span class="stnum big" style="--c:${COUNTRIES[st.c].color}">${stageNum(st.id)}</span>${esc(st.name.replace(" (croisière)", ""))}</h2>${next ? `<button class="x" data-snav="${next}" data-dir="next" aria-label="Étape suivante">›</button>` : ""}</div><button class="x" data-close aria-label="Fermer">✕</button></div>
     <div class="dayscene">${scene(st.id, hourIn(TZ[st.c] || "Europe/Paris"), "ss")}</div>
     ${(() => { const inc = LEGS.find((l) => l[1] === id || (id === "kl2" && l[1] === "kl1")); if (!inc) return "";
-      return `<div class="legstrip" style="--c:${COUNTRIES[st.c].color}"><b>${esc(legName(inc[0]))}</b><span class="legline"><span class="legveh">${VEH[inc[2]] || "🚄"}</span></span><b>${esc(legName(id))}</b><small>Pour y arriver · ${esc(fmt(inc[3]))} · ≈ ${legKm(inc).toLocaleString("fr-FR")} km${inc[4] ? " · de nuit" : ""}</small></div>`; })()}
+      return `<div class="legstrip" style="--c:${COUNTRIES[st.c].color}"><b>${esc(legName(inc[0]))}</b><span class="legline"><span class="legveh">${VEH[inc[2]] || "🚄"}</span></span><b>${esc(legName(id))}</b><small>Pour y arriver · ${esc(fmt(inc[3]))} · ≈ ${legKm(inc).toLocaleString("fr-FR")} km${inc[4] ? " · de nuit" : ""}${inc[5] ? `<br>⏱ ${esc(inc[5])}` : ""}</small></div>`; })()}
     ${stageBlock(st, st.from)}
     <h2 class="sect">Les jours</h2>
     ${days.map(([iso, , trj, act, nuit]) => `<button class="row" style="--c:${COUNTRIES[st.c].color}" data-day="${iso}"><span class="date">${esc(fmt(iso))}</span><span class="txt"><strong>${esc(act || trj || "")}</strong><small>${esc(nuit)}</small></span></button>`).join("")}`);
@@ -765,7 +765,7 @@ function openDay(iso, dir) {
   const nm = (id) => id === "nice" ? "Nice" : (stageById[id]?.name || "").replace(/ \(.*\)/, "").replace("Cascade de ", "").replace("Gorges du ", "").replace(" et Angkor", "");
   const n = DAYS.findIndex((d) => d[0] === iso) + 1;
   const top = `<div class="dayscene">${scene(here?.id || "home", hourIn(TZ[here?.c] || "Europe/Paris"), "ds")}<div class="dayprog"><i style="--p:${n / DAYS.length}"></i></div></div>
-    ${leg ? `<div class="legstrip" style="--c:${COUNTRIES[(stageById[leg[1]] || here || {}).c || "fr"].color}"><b>${esc(nm(leg[0]))}</b><span class="legline"><span class="legveh">${VEH[leg[2]] || "🚄"}</span></span><b>${esc(nm(leg[1]))}</b><small>≈ ${legKm(leg).toLocaleString("fr-FR")} km${leg[4] ? " · de nuit" : ""}</small></div>` : ""}`;
+    ${leg ? `<div class="legstrip" style="--c:${COUNTRIES[(stageById[leg[1]] || here || {}).c || "fr"].color}"><b>${esc(nm(leg[0]))}</b><span class="legline"><span class="legveh">${VEH[leg[2]] || "🚄"}</span></span><b>${esc(nm(leg[1]))}</b><small>≈ ${legKm(leg).toLocaleString("fr-FR")} km${leg[4] ? " · de nuit" : ""}${leg[5] ? `<br>⏱ ${esc(leg[5])}` : ""}</small></div>` : ""}`;
   const sh = openSheet(`<div class="sheet-head"><div class="daynav">${prev ? `<button class="x" data-dnav="${prev}" aria-label="Jour précédent">‹</button>` : ""}<h2>${esc(fmtLong(iso))}</h2>${next ? `<button class="x" data-dnav="${next}" aria-label="Jour suivant">›</button>` : ""}</div><button class="x" data-close aria-label="Fermer">✕</button></div>
     ${top}
     ${dayBlock(iso)}
