@@ -658,6 +658,37 @@ TRIGGER:PT9H
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
+UID:cancel-seed-12-hotel-huangguoshu-1-nuit-@asie2027
+DTSTAMP:20260101T000000Z
+DTSTART;VALUE=DATE:20270705
+DTEND;VALUE=DATE:20270706
+SUMMARY:⏳ Dernier jour pour annuler gratuitement : Hôtel Huangguoshu (1 
+ nuit)
+DESCRIPTION:Annulation gratuite jusqu'au 05/07/2027 inclus. Réservation 
+ n° 9926111506980002.\n\nDétails et liens dans l'appli : https://pauwels
+ letho-byte.github.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:⏳ Dernier jour pour annuler gratuitement : Hôtel Huangguoshu
+  (1 nuit)
+TRIGGER:-P2DT15H
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:⏳ Dernier jour pour annuler gratuitement : Hôtel Huangguoshu
+  (1 nuit)
+TRIGGER:-PT15H
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:⏳ Dernier jour pour annuler gratuitement : Hôtel Huangguoshu
+  (1 nuit)
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:cancel-seed-47-auberge-furong-zhen-1-nuit-@asie2027
 DTSTAMP:20260101T000000Z
 DTSTART;VALUE=DATE:20270702
