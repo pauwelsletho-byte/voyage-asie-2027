@@ -126,6 +126,8 @@ function startData() {
   }))).then(() => store().migrate("timing-2026-11-14", [
     { coll: "resas", id: "seed-39-" + slug("Vol Siem Reap → Kuala Lumpur"), data: {}, ifSame: { notes: ["Le soir (AirAsia)", SEED_RESAS[39][3]] } },
     { coll: "resas", id: "seed-36-" + slug("Vol Hô Chi Minh-Ville → Siem Reap"), data: {}, ifSame: { notes: ["", SEED_RESAS[36][3]] } },
+  ])).then(() => store().migrate("porte-ouest-2026-11-14", [
+    { coll: "resas", id: "seed-07-" + slug("Guesthouse Wulingyuan (2 nuits)"), data: {}, ifSame: { title: ["Guesthouse Wulingyuan (2 nuits)", SEED_RESAS[7][1]], notes: ["Près de l'entrée du parc", SEED_RESAS[7][3]] } },
   ])).catch(() => {});
   S.unsubs.push(store().subscribe("resas", (items, m) => { if (items) S.resas = items; setSync(m); render(); }));
   S.unsubs.push(store().subscribe("checks", (items) => { if (items) S.checks = items; render(); }));

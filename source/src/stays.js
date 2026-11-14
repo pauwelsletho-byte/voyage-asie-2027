@@ -13,7 +13,7 @@ export const STAY_SITES = [
 // id d'étape → [où exactement, ce qu'il faut chercher ou vérifier, sites, à réserver en premier]
 export const STAYS = {
   hongkong: ["Jordan ou Austin (Kowloon), à moins de 10 min à pied de la gare de West Kowloon", "Train à 8 h le 29. Chambres minuscules : surface et fenêtre. 100 à 150 € la nuit.", ["booking", "agoda"], true],
-  zhangjiajie: ["1re nuit en ville, à pied de la gare du téléphérique de Tianmen (天门山索道). Puis 2 nuits dans le bourg de Wulingyuan (武陵源), à pied de l'entrée principale du parc", "Hôtel qui accepte les étrangers. Wulingyuan : départ des navettes du parc, et 30-40 min de la gare de Zhangjiajie-Ouest pour Furong.", ["trip", "booking"]],
+  zhangjiajie: ["1re nuit en ville, à pied de la gare du téléphérique de Tianmen (天门山索道). Puis 2 nuits près de la porte ouest du parc (杨家界门票站), à pied du téléphérique de Yangjiajie", "Pour éviter la foule. Idées : One Step to Heaven Inn (100 m du guichet, propriétaire anglophone), Tongfu Inn (dans le parc), Whispering Mountains, No.5 Valley Lodge. Pas de restaurants autour : dîner à l'auberge. Leur faire réserver les taxis (environ 1 h depuis Tianmen, 50 min jusqu'à la gare).", ["trip", "booking"]],
   furong: ["Dans le vieux village, côté cascade", "Chambre « vue cascade » (瀑布景观). Éviter la ville neuve et les hôtels près de la gare.", ["trip"]],
   fenghuang: ["Vieille ville, au bord de la rivière Tuo, près d'une des entrées", "Chambre vue rivière (河景房). Lire les avis sur le bruit (bars sur certaines berges). Vieille ville piétonne : près d'une entrée = moins de sacs à porter.", ["trip", "booking"], true],
   huangguoshu: ["Village au pied du site, à pied de l'entrée de la cascade", "Simple suffit, une seule nuit. Hôtel qui accepte les étrangers.", ["trip"]],

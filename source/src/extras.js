@@ -246,7 +246,7 @@ export const PHRASES = [
 // Lieux à montrer au chauffeur, par étape : [nom français, écriture locale]
 export const LOCAL_PLACES = {
   hongkong: [["Gare de West Kowloon (train pour la Chine)", "西九龍站"], ["Aéroport de Hong Kong", "香港國際機場"]],
-  zhangjiajie: [["Gare de Zhangjiajie-Ouest", "张家界西站"], ["Téléphérique du mont Tianmen", "天门山索道"], ["Wulingyuan (entrée du parc)", "武陵源"], ["Grand Canyon de Zhangjiajie", "张家界大峡谷"]],
+  zhangjiajie: [["Gare de Zhangjiajie-Ouest", "张家界西站"], ["Téléphérique du mont Tianmen", "天门山索道"], ["Porte ouest du parc (guichet de Yangjiajie)", "张家界国家森林公园西门 杨家界门票站"], ["Téléphérique de Yangjiajie", "杨家界索道"], ["Grand Canyon de Zhangjiajie", "张家界大峡谷"]],
   furong: [["Village de Furong Zhen", "芙蓉镇"], ["Gare de Furongzhen", "芙蓉镇站"]],
   fenghuang: [["Vieille ville de Fenghuang", "凤凰古城"], ["Gare de Fenghuang (vieille ville)", "凤凰古城站"]],
   huangguoshu: [["Cascade de Huangguoshu", "黄果树瀑布"], ["Gare d'Anshun-Ouest", "安顺西站"]],

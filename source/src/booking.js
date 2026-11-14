@@ -35,7 +35,7 @@ export const BOOKING = {
   "Train G6080 Hong Kong → Zhangjiajie-Ouest": ["2027-06-01", "Demande dès début juin, ventes vers le 14 juin", TR_CN, "Un seul train par jour : déposer la demande sur Trip.com dès début juin, elle part à l'ouverture."],
   "Hôtel Zhangjiajie ville (1 nuit)": ["2027-04-01", "Avril", H_CN, "Vérifier que l'hôtel accepte les étrangers."],
   "Mont Tianmen (billet nominatif)": ["2027-06-26", "3 ou 4 jours avant", ["trip"], "Billet lié au passeport."],
-  "Guesthouse Wulingyuan (2 nuits)": ["2027-04-01", "Avril", H_CN, "Vérifier que l'hôtel accepte les étrangers."],
+  "Auberge porte ouest, Yangjiajie (2 nuits)": ["2027-04-01", "Avril", ["trip", "booking"], "Vérifier que l'hôtel accepte les étrangers. Petites auberges : One Step to Heaven Inn, Tongfu Inn, Whispering Mountains, No.5 Valley Lodge."],
   "Parc de Wulingyuan (billet 4 jours)": ["2027-06-27", "3 ou 4 jours avant", ["trip"], "Billet lié au passeport."],
   "Train Zhangjiajie-Ouest → Furongzhen": ["2027-06-17", "Vers le 17 juin", TR_CN, "Ventes environ 15 jours avant."],
   "Auberge Furong Zhen (1 nuit)": ["2027-04-01", "Avril", H_CN, "Vérifier que l'hôtel accepte les étrangers. Vue sur la cascade si possible."],
