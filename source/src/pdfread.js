@@ -32,13 +32,18 @@ function findDates(txt) {
   for (const m of txt.matchAll(/\b(\d{1,2})(?:er)?\s+([a-zéû]{3,9})\.?,?\s+(20\d\d)\b/gi)) { const mo = MONTHS[m[2].toLowerCase()]; if (mo) push(m[3], mo, m[1], m.index); }
   for (const m of txt.matchAll(/\b([a-zéû]{3,9})\.?\s+(\d{1,2}),?\s+(20\d\d)\b/gi)) { const mo = MONTHS[m[1].toLowerCase()]; if (mo) push(m[3], mo, m[2], m.index); }
   for (const m of txt.matchAll(/(\d{4})年(\d{1,2})月(\d{1,2})日/g)) push(m[1], m[2], m[3], m.index);
+  // sans année : « 18 juin », « Jun 18 » → 2027 pendant le voyage, sinon la prochaine occurrence
+  const yearFor = (mo, d) => { if (mo >= 6 && mo <= 8) return 2027; const now = new Date(), y = now.getFullYear(); return new Date(y, mo - 1, d) < now ? y + 1 : y; };
+  const taken = (idx) => found.some((f) => Math.abs(f.idx - idx) < 3);
+  for (const m of txt.matchAll(/\b(\d{1,2})(?:er)?\s+([a-zéû]{3,9})\.?(?!\.?,?\s+(?:20\d\d))/gi)) { const mo = MONTHS[m[2].toLowerCase()]; if (mo && !taken(m.index)) push(yearFor(mo, +m[1]), mo, m[1], m.index); }
+  for (const m of txt.matchAll(/\b([a-zéû]{3,9})\.?\s+(\d{1,2})\b(?!,?\s+20\d\d)/gi)) { const mo = MONTHS[m[1].toLowerCase()]; if (mo && !taken(m.index)) push(yearFor(mo, +m[2]), mo, m[2], m.index); }
   return found.sort((a, b) => a.idx - b.idx);
 }
 
 export function parseConfirmation(txt, { start, end, rates }) {
   const out = {}, low = txt.toLowerCase();
   // numéro de réservation
-  const refRe = /(?:n[°º]|num[ée]ro|number|no\.|code|r[ée]f[ée]rence|reference|booking id|confirmation|pnr|itin[ée]raire|order)\s*(?:de\s+)?(?:r[ée]servation|booking|confirmation|commande|dossier)?\s*[:#]?\s*([A-Z0-9][A-Z0-9-]{4,19})\b/gi;
+  const refRe = /(?:n[°º]|num[ée]ro|number|no\.|code|r[ée]f[ée]rence|reference|booking id|confirmation|pnr|itin[ée]raire|order)\s*(?:de\s+)?(?:r[ée]servation|booking|confirmation|commande|dossier)?\s*[:#]?\s*([A-Z0-9][A-Z0-9.-]{4,19}[A-Z0-9])\b/gi;
   for (const m of txt.matchAll(refRe)) { if (/\d/.test(m[1]) && !/^(19|20)\d\d$/.test(m[1])) { out.ref = m[1]; break; } }
   // date dans la période du voyage (de préférence après « arrivée », « check-in », « départ »)
   const dates = findDates(txt).filter((d) => d.iso >= start && d.iso <= end);
@@ -52,23 +57,28 @@ export function parseConfirmation(txt, { start, end, rates }) {
   // montant payé (converti en euros)
   const CUR = { "€": "EUR", eur: "EUR", hkd: "HKD", "hk$": "HKD", cny: "CNY", rmb: "CNY", "¥": "CNY", "￥": "CNY", vnd: "VND", "₫": "VND", usd: "USD", "us$": "USD", "$": "USD", myr: "MYR", rm: "MYR", khr: "KHR" };
   const amounts = [];
-  const num = (s) => { s = s.replace(/\s/g, ""); if (/,\d{2}$/.test(s)) s = s.replace(/\./g, "").replace(",", "."); else s = s.replace(/,/g, ""); return parseFloat(s); };
-  for (const m of txt.matchAll(/(€|eur|hkd|hk\$|cny|rmb|¥|￥|vnd|₫|usd|us\$|myr|rm)\s?(\d[\d\s.,]*\d|\d)/gi)) amounts.push({ cur: CUR[m[1].toLowerCase()], v: num(m[2]), idx: m.index });
-  for (const m of txt.matchAll(/(\d[\d\s.,]*\d|\d)\s?(€|eur|hkd|cny|rmb|元|vnd|₫|đ|usd|myr)\b/gi)) amounts.push({ cur: CUR[m[2].toLowerCase()] || (m[2] === "元" ? "CNY" : "VND"), v: num(m[1]), idx: m.index });
+  const num = (s) => { s = s.replace(/[ \u00a0\u202f]/g, ""); if (/,\d{1,2}$/.test(s)) s = s.replace(/\./g, "").replace(",", "."); else if (/\.\d{3}$/.test(s) && !/\.\d{1,2}$/.test(s)) s = s.replace(/\./g, ""); else s = s.replace(/,/g, ""); return parseFloat(s); };
+  // un seul nombre : milliers séparés par espace, point ou virgule (groupes de 3 chiffres), décimales éventuelles
+  const N = "(\\d{1,3}(?:[ \\u00a0\\u202f.,]\\d{3})+(?:[.,]\\d{1,2})?|\\d+(?:[.,]\\d{1,2})?)";
+  for (const m of txt.matchAll(new RegExp("(€|eur|hkd|hk\\$|cny|rmb|¥|￥|vnd|₫|usd|us\\$|myr|rm)[ \\u00a0]?" + N + "(?![\\d])", "gi"))) amounts.push({ cur: CUR[m[1].toLowerCase()], v: num(m[2]), idx: m.index });
+  for (const m of txt.matchAll(new RegExp("(?<![\\d.,])" + N + "[ \\u00a0]?(€|eur|hkd|cny|rmb|元|vnd|₫|đ|usd|myr)(?![a-z])", "gi"))) amounts.push({ cur: CUR[m[2].toLowerCase()] || (m[2] === "元" ? "CNY" : "VND"), v: num(m[1]), idx: m.index });
   const valid = amounts.filter((a) => a.cur && a.v > 0 && a.v < 1e9);
   if (valid.length) {
-    const kw = [...low.matchAll(/total|montant|prix|price|pay[ée]|paid|amount|à payer|charged|tarif/g)].map((m) => m.index);
-    const near = valid.filter((a) => kw.some((k) => a.idx >= k && a.idx - k < 60));
     const toE = (a) => a.v / ((rates || {})[a.cur] || 1);
-    const pick = (near.length ? near : valid).reduce((a, b) => (toE(b) > toE(a) ? b : a));
+    const after = (re, max) => { const ks = [...low.matchAll(re)].map((m) => m.index); return valid.filter((a) => ks.some((k) => a.idx >= k && a.idx - k < max)); };
+    const tot = after(/prix total|montant total|total price|total amount|grand total|total à payer|total payé|total paid|total charged|total \(ttc\)|total ttc|总价|订单总额|\btotal\b/g, 50);
+    const paidKw = after(/montant pay[ée]|vous avez pay[ée]|amount paid|you paid|paid|pay[ée]|à payer|amount due|montant|price|prix/g, 40);
+    // dernier « total » du document (le récapitulatif final), sinon le plus grand montant lié à un mot-clé, sinon le plus grand tout court
+    const pick = tot.length ? tot[tot.length - 1] : (paidKw.length ? paidKw : valid).reduce((a, b) => (toE(b) > toE(a) ? b : a));
     out.paid = Math.round(toE(pick) * 100) / 100; out.paidCur = pick.cur; out.paidRaw = pick.v;
   }
   // annulation gratuite et date de paiement (n'importe quelle date, pas forcément pendant le voyage)
   const all = findDates(txt);
-  const after = (re, max = 140) => { for (const m of low.matchAll(re)) { const d = all.find((x) => x.idx > m.index && x.idx - m.index < max); if (d) return d.iso; } return null; };
-  out.cancelBy = after(/annulation gratuite|annuler gratuitement|annulable gratuitement|sans frais d'annulation|free cancell?ation|cancel for free|free of charge until|cancell?ation is free|免费取消/g);
-  out.payOn = after(/vous paierez|vous serez débité|sera débité|sera prélevé|prélèvement le|paiement le|payer le|paiement prévu|à payer avant|pay on|you'?ll pay|you will be charged|will be charged on|payment (?:due|date|on)|charged on/g);
+  const after2 = (re, max = 140) => { for (const m of low.matchAll(re)) { const d = all.find((x) => x.idx > m.index && x.idx - m.index < max); if (d) return d.iso; } return null; };
+  out.cancelBy = after2(/annulation gratuite|annuler gratuitement|annulable gratuitement|gratuitement jusqu|gratuit jusqu|sans frais (?:d'annulation )?jusqu|sans frais avant|annuler sans frais|annulation sans frais|free cancell?ation|cancel for free|cancel free|free of charge until|free of charge before|cancell?ation is free|without charge (?:until|before)|cancel (?:before|until|by)|免费取消|可免费取消/g, 160);
+  out.payOn = after2(/vous paierez|vous serez débité|vous serez prélevé|sera débité|sera prélevé|débitera|prélèvement le|prélèvement prévu|paiement le|paiement prévu|payer le|à payer avant|à payer le|date de paiement|prépaiement le|pay on|you'?ll pay|you will pay|you will be charged|will be charged on|be charged on|payment (?:due|date|on|will be taken)|charged on|due date/g, 160);
   out.payOnSite = /paiement sur place|payer sur place|à régler sur place|réglerez sur place|paierez (?:à l'établissement|sur place|à l'hôtel)|payer à l'établissement|pay at the property|pay at (?:the )?hotel|pay on arrival|paiement à l'arrivée|到店付款|到店支付/.test(low) || undefined;
+  if (out.payOnSite) delete out.payOn;
   // adresse
   const adr = txt.match(/(?:adresse|address)\s*[:：]?\s*([^\n]{8,120})/i);
   if (adr) out.place = adr[1].trim();

@@ -904,14 +904,19 @@ function openResa(r) {
       set("ref", got.ref, "n° " + got.ref);
       set("date", got.date, "date " + (got.date ? fmt(got.date) : ""), true);
       set("time", got.time, "heure " + got.time);
-      if (got.paid) set("paid", got.paid, "payé " + money(got.paid) + (got.paidCur !== "EUR" ? ` (${money(got.paidRaw, got.paidCur)})` : ""));
+      // pas encore payé (sur place ou prélevé plus tard) : le montant va dans « Prix », pas dans « Montant payé »
+      const later = got.payOnSite || (got.payOn && got.payOn > todayIso());
+      const amt = got.paid ? money(got.paid) + (got.paidCur !== "EUR" ? ` (${money(got.paidRaw, got.paidCur)})` : "") : "";
+      if (got.paid && later) set("price", amt, "prix " + amt, true);
+      else if (got.paid) set("paid", got.paid, "payé " + amt);
       set("place", got.place, "adresse");
       set("cancelBy", got.cancelBy, "annulation gratuite jusqu'au " + (got.cancelBy ? fmt(got.cancelBy) : ""));
       if (got.payOnSite && !f.payOnSite.checked) { f.payOnSite.checked = true; f.payOn.value = ""; f.payOn.disabled = true; done.push("paiement sur place"); }
       else set("payOn", got.payOn, "paiement le " + (got.payOn ? fmt(got.payOn) : ""));
       set("localAddr", got.localAddr, "adresse locale");
       if (done.length && f.status.value !== "reserve") { f.status.value = "reserve"; done.push("statut Réservé"); }
-      box.innerHTML = done.length ? `<p class="okmsg">Rempli depuis le PDF : ${esc(done.join(" · "))}. Vérifiez puis touchez Enregistrer.</p>`
+      const miss = [!got.paid && "prix", !got.cancelBy && "date d'annulation", !got.payOn && !got.payOnSite && "date de paiement"].filter(Boolean);
+      box.innerHTML = done.length ? `<p class="okmsg">Rempli depuis le PDF : ${esc(done.join(" · "))}. Vérifiez puis touchez Enregistrer.</p>${miss.length ? `<p class="muted small">Pas trouvé : ${esc(miss.join(", "))}. À remplir à la main si besoin.</p>` : ""}`
         : `<p class="muted small">Je n'ai rien trouvé à remplir dans ce PDF. Envoyez-le à Claude dans la conversation si besoin.</p>`;
     } catch (err) { box.innerHTML = `<p class="muted small">Lecture du PDF impossible (${esc(err.message)}).</p>`; }
   }
