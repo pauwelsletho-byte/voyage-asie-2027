@@ -1,4 +1,5 @@
 import { TRIP, COUNTRIES, STAGES, DAYS, SEED_RESAS, CHECKLIST } from "./data.js";
+import { STAYS, STAY_SITES, staySites } from "./stays.js";
 import { initStore, store, isDemo } from "./store.js";
 import { landscape, MOTIFS, TOOL_ICONS } from "./decor.js";
 import { FOODS, foodId, foodsForStage } from "./food.js";
@@ -234,7 +235,7 @@ function stageBlock(st, iso, opt = {}) {
     ${wxLine(st)}
     ${opt.noGuide ? "" : guideFor(st.id).length ? `<h3>Le programme en détail</h3><div class="guide">${guideFor(st.id).map((g) => guideItem(st, g, false)).join("")}</div>`
       : `<h3>À faire</h3><ul>${st.todo.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>`}
-    <h3>Où dormir</h3><p>${esc(st.sleep)}</p>
+    <h3>Où dormir</h3>${stayBlock(st)}
     ${hotels.length ? hotels.map(resaCard).join("") : ""}
     ${(() => { const g = foodsForStage(st.id); return g ? `<h3>À goûter</h3><p class="foodline">${g.items.map(([fr]) => esc(fr)).join(" · ")}</p>` : ""; })()}
     ${showList(st)}
@@ -685,13 +686,24 @@ function openPaste() {
   };
 }
 
+function stayBlock(st, noBadge) {
+  const s = STAYS[st.id]; if (!s) return `<p>${esc(st.sleep)}</p>`;
+  return `<div class="stay">${s[3] && !noBadge ? `<span class="stayfirst">À réserver en premier</span>` : ""}<p><b>${esc(s[0])}</b></p><p class="muted small">${esc(s[1])}</p>${staySites(st.id).length ? `<div class="bksites">${staySites(st.id).map(([n, u]) => `<a class="chip" href="${esc(u)}" target="_blank" rel="noopener">${esc(n)} ↗</a>`).join("")}</div>` : ""}</div>`;
+}
+function staysPrep() {
+  const nights = (st) => daysBetween(st.from, st.to) + (st.extra || []).reduce((a, [f, t]) => a + daysBetween(f, t), 0);
+  const rows = STAGES.filter((st) => STAYS[st.id] && st.id !== "croisiere").map((st) => `<details class="stayrow"><summary><span class="stnum" style="--c:${COUNTRIES[st.c].color}">${stageNum(st.id)}</span><span><b>${esc(st.name.replace(" (nuit tampon)", ", 1re nuit"))}</b>${STAYS[st.id][3] ? ` <span class="stayfirst">en premier</span>` : ""}<small>${esc(fmt(st.from))} · ${nights(st)} ${nights(st) > 1 ? "nuits" : "nuit"}</small></span></summary>${stayBlock(st, true)}</details>`).join("");
+  return `<h2 class="sect">Logements : où chercher</h2>
+    <details class="card stayrow"><summary><span class="stnum" style="--c:#5B6964">?</span><span><b>Quels sites selon le pays</b></span></summary><div class="stay">${STAY_SITES.map(([p, t]) => `<p><b>${esc(p)}</b> · ${esc(t)}</p>`).join("")}</div></details>
+    <div class="card list">${rows}</div>`;
+}
 function viewPrep() {
   const custom = S.checks.filter((c) => c.label).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
   const item = (id, label, done) => `<label class="check"><input type="checkbox" data-check="${esc(id)}" ${done ? "checked" : ""}><span>${esc(label)}</span></label>`;
   const isDone = (id) => S.checks.some((c) => c.id === id && c.done);
   const group = (g, title) => `<h2 class="sect">${title}</h2><div class="card list">${CHECKLIST.map((c, i) => c[0] === g ? item("c" + i, c[1], isDone("c" + i)) : "").join("")}${custom.filter((c) => c.group === g).map((c) => item(c.id, c.label, c.done)).join("")}
     <form class="addcheck" data-group="${g}"><input placeholder="Ajouter…" aria-label="Ajouter un élément"><button class="btn sm">OK</button></form></div>`;
-  return group("avant", "Avant de partir") + group("sac", "Dans le sac");
+  return staysPrep() + group("avant", "Avant de partir") + group("sac", "Dans le sac");
 }
 
 /* ---------- interactions ---------- */
@@ -1087,7 +1099,7 @@ const TOOLS = [
   ["tips", "Bons réflexes", "Pourboires, prix, pièges"],
   ["stats", "Stats du voyage", "Kilomètres, trains, plats"],
   ["vault", "Documents et urgences", "Passeports, assurance, numéros"],
-  ["prep", "Préparatifs", "Checklist avant le départ et sac"],
+  ["prep", "Préparatifs", "Checklist, logements, sac"],
   ["settings", "Réglages", "Prénoms, budget, compte"],
 ];
 function viewMore() {

@@ -7,8 +7,31 @@ X-WR-CALNAME:Asie 2027 · rappels
 X-WR-TIMEZONE:Europe/Paris
 REFRESH-INTERVAL;VALUE=DURATION:P1D
 BEGIN:VEVENT
+UID:resa-2026-11-14@asie2027
+DTSTAMP:20261114T135121Z
+DTSTART;VALUE=DATE:20261114
+DTEND;VALUE=DATE:20261115
+SUMMARY:Asie 2027 : 4 réservations à faire
+DESCRIPTION:À réserver :\n• Hôtel Hong Kong (3 nuits) (Dès maintenant (t
+ rès demandé)) : Booking\, Agoda. Annulation gratuite si possible.\n• Au
+ berge Fenghuang (2 nuits) (Dès maintenant (très demandé)) : Trip.com\, 
+ Booking. Chambre avec vue sur la rivière.\n• Halfway Guesthouse (1 nuit
+ ) (Dès maintenant (très demandé)) : Trip.com\, Booking. Chambre avec vu
+ e\, ça part vite en été. Sinon\, les contacter directement.\n• Villa Hộ
+ i An (4 nuits) (Dès maintenant (très demandé)) : Agoda\, Booking. Avec 
+ piscine.\n\nDétails et liens dans l'appli : https://pauwelsletho-byte.g
+ ithub.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Asie 2027 : 4 réservations à faire
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:resa-2026-12-01@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20261201
 DTEND;VALUE=DATE:20261202
 SUMMARY:Asie 2027 : 3 réservations à faire
@@ -30,7 +53,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:resa-2027-02-15@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270215
 DTEND;VALUE=DATE:20270216
 SUMMARY:Asie 2027 : Vol Siem Reap → Kuala Lumpur
@@ -48,58 +71,54 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:resa-2027-04-01@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270401
 DTEND;VALUE=DATE:20270402
-SUMMARY:Asie 2027 : 17 réservations à faire
-DESCRIPTION:À réserver :\n• Hôtel Hong Kong (3 nuits) (Avril) : Booking\
- , Agoda\, Trip.com. Annulation gratuite si possible.\n• Hôtel Zhangjiaj
- ie ville (1 nuit) (Avril) : Booking\, Agoda\, Trip.com. Vérifier que l'
- hôtel accepte les étrangers.\n• Guesthouse Wulingyuan (2 nuits) (Avril)
-  : Booking\, Agoda\, Trip.com. Vérifier que l'hôtel accepte les étrange
- rs.\n• Auberge Furong Zhen (1 nuit) (Avril) : Booking\, Agoda\, Trip.co
- m. Vérifier que l'hôtel accepte les étrangers. Vue sur la cascade si po
- ssible.\n• Auberge Fenghuang (2 nuits) (Avril) : Booking\, Agoda\, Trip
- .com. Chambre avec vue sur la rivière.\n• Hôtel Huangguoshu (1 nuit) (A
- vril) : Booking\, Agoda\, Trip.com\n• Halfway Guesthouse (1 nuit) (Avri
- l) : Trip.com\, Booking. Chambre avec vue\, ça part vite en été.\n• Hôt
- el Shangri-La (2 nuits) (Avril) : Booking\, Agoda\, Trip.com\n• Guestho
- use Dali (2 nuits) (Avril) : Booking\, Agoda\, Trip.com\n• Hôtel Kunmin
- g (1 nuit) (Avril) : Booking\, Agoda\, Trip.com\n• Vol Kunming → Hanoi 
- (Avril) : Google Flights\, Vietnam Airlines\, China Eastern\n• Bungalow
-  Ninh Binh (3 nuits) (Avril) : Booking\, Agoda. Tam Cốc\, avec piscine.
- \n• Bungalow Pù Luông (2 nuits) (Avril) : Booking\, Agoda\n• Villa Hội 
- An (4 nuits) (Avril) : Booking\, Agoda. Avec piscine.\n• Vol Hô Chi Min
+SUMMARY:Asie 2027 : 13 réservations à faire
+DESCRIPTION:À réserver :\n• Hôtel Zhangjiajie ville (1 nuit) (Avril) : T
+ rip.com\, Booking. Vérifier que l'hôtel accepte les étrangers.\n• Guest
+ house Wulingyuan (2 nuits) (Avril) : Trip.com\, Booking. Vérifier que l
+ 'hôtel accepte les étrangers.\n• Auberge Furong Zhen (1 nuit) (Avril) :
+  Trip.com\, Booking. Vérifier que l'hôtel accepte les étrangers. Vue su
+ r la cascade si possible.\n• Hôtel Huangguoshu (1 nuit) (Avril) : Trip.
+ com\, Booking\n• Hôtel Shangri-La (2 nuits) (Avril) : Trip.com\, Bookin
+ g\n• Guesthouse Dali (2 nuits) (Avril) : Trip.com\, Booking\n• Hôtel Ku
+ nming (1 nuit) (Avril) : Trip.com\, Booking\n• Vol Kunming → Hanoi (Avr
+ il) : Google Flights\, Vietnam Airlines\, China Eastern\n• Bungalow Nin
+ h Binh (3 nuits) (Avril) : Agoda\, Booking. Tam Cốc\, avec piscine.\n• 
+ Bungalow Pù Luông (2 nuits) (Avril) : Agoda\, Booking\n• Vol Hô Chi Min
  h-Ville → Siem Reap (Avril) : Google Flights\, Vietnam Airlines\n• Hôte
- l Siem Reap (4 nuits) (Avril) : Booking\, Agoda. Hôtel-boutique avec pi
- scine.\n• Hôtel Kuala Lumpur (1 nuit) (Avril) : Booking\, Agoda. Piscin
+ l Siem Reap (4 nuits) (Avril) : Agoda\, Booking. Hôtel-boutique avec pi
+ scine.\n• Hôtel Kuala Lumpur (1 nuit) (Avril) : Agoda\, Booking. Piscin
  e sur le toit.\n\nDétails et liens dans l'appli : https://pauwelsletho-
  byte.github.io/voyage-asie-2027/
 URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
 TRANSP:TRANSPARENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:Asie 2027 : 17 réservations à faire
+DESCRIPTION:Asie 2027 : 13 réservations à faire
 TRIGGER:PT9H
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:resa-2027-05-01@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270501
 DTEND;VALUE=DATE:20270502
 SUMMARY:Asie 2027 : 9 réservations à faire
-DESCRIPTION:À réserver :\n• Hôtel Hanoi (3 nuits) (Mai) : Booking\, Agod
- a\n• Croisière baie de Lan Ha (Mai) : Klook\, GetYourGuide. Vérifier le
+DESCRIPTION:À réserver :\n• Hôtel Hanoi (3 nuits) (Mai) : Agoda\, Bookin
+ g\n• Croisière baie de Lan Ha (Mai) : Klook\, GetYourGuide. Vérifier le
   remboursement en cas de typhon et le dépôt à Ninh Binh le 17.\n• Guest
- house Phong Nha (3 nuits) (Mai) : Booking\, Agoda\n• Excursion Tu Lan (
- Mai) : Oxalis. Places limitées.\n• Hôtel Quy Nhon (2 nuits) (Mai) : Boo
- king\, Agoda\n• Hôtel Hô Chi Minh-Ville (4 nuits) (Mai) : Booking\, Ago
- da\n• Hôtel KL près de TBS (1 nuit) (Mai) : Booking\, Agoda. Près de la
+ house Phong Nha (3 nuits) (Mai) : Agoda\, Booking\n• Excursion Tu Lan (
+ Mai) : Oxalis. Places limitées.\n• Hôtel Quy Nhon (2 nuits) (Mai) : Ago
+ da\, Booking\n• Hôtel Hô Chi Minh-Ville (4 nuits) (Mai) : Agoda\, Booki
+ ng\n• Hôtel KL près de TBS (1 nuit) (Mai) : Agoda\, Booking. Près de la
   gare routière TBS.\n• PADI Open Water (Mai (choisir le centre dès févr
  ier)). Récupérer le code de la théorie en ligne.\n• Chalet Tioman (6 nu
- its) (Mai) : Booking\, Agoda. Salang ou Air Batang.\n\nDétails et liens
-  dans l'appli : https://pauwelsletho-byte.github.io/voyage-asie-2027/
+ its) (Mai) : WhatsApp\, Agoda\, Booking. Salang ou Air Batang. Souvent 
+ via le centre de plongée (cours + logement)\, ou en direct sur WhatsApp
+ .\n\nDétails et liens dans l'appli : https://pauwelsletho-byte.github.i
+ o/voyage-asie-2027/
 URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
 TRANSP:TRANSPARENT
 BEGIN:VALARM
@@ -110,7 +129,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:resa-2027-06-01@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270601
 DTEND;VALUE=DATE:20270602
 SUMMARY:Asie 2027 : 2 réservations à faire
@@ -131,7 +150,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:resa-2027-06-17@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270617
 DTEND;VALUE=DATE:20270618
 SUMMARY:Asie 2027 : Train Zhangjiajie-Ouest → Furongzhen
@@ -149,7 +168,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:resa-2027-06-18@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270618
 DTEND;VALUE=DATE:20270619
 SUMMARY:Asie 2027 : Train Furongzhen → Fenghuang
@@ -167,7 +186,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:resa-2027-06-20@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270620
 DTEND;VALUE=DATE:20270621
 SUMMARY:Asie 2027 : Trains Fenghuang → Anshun
@@ -185,7 +204,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:resa-2027-06-21@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270621
 DTEND;VALUE=DATE:20270622
 SUMMARY:Asie 2027 : 2 réservations à faire
@@ -204,7 +223,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:resa-2027-06-25@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270625
 DTEND;VALUE=DATE:20270626
 SUMMARY:Asie 2027 : Train Shangri-La → Dali
@@ -222,7 +241,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:resa-2027-06-26@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270626
 DTEND;VALUE=DATE:20270627
 SUMMARY:Asie 2027 : Mont Tianmen
@@ -239,7 +258,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:resa-2027-06-27@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270627
 DTEND;VALUE=DATE:20270628
 SUMMARY:Asie 2027 : 2 réservations à faire
@@ -258,7 +277,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:resa-2027-07-04@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270704
 DTEND;VALUE=DATE:20270705
 SUMMARY:Asie 2027 : Moto Ninh Binh
@@ -276,7 +295,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:resa-2027-07-08@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270708
 DTEND;VALUE=DATE:20270709
 SUMMARY:Asie 2027 : Train de nuit SE1 Ninh Binh → Đồng Hới
@@ -294,7 +313,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:resa-2027-07-18@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270718
 DTEND;VALUE=DATE:20270719
 SUMMARY:Asie 2027 : Train de nuit SE1 Diêu Trì → Saigon
@@ -312,7 +331,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:resa-2027-07-22@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270722
 DTEND;VALUE=DATE:20270723
 SUMMARY:Asie 2027 : Train Đồng Hới → Đà Nẵng
@@ -329,7 +348,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:resa-2027-07-26@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270726
 DTEND;VALUE=DATE:20270727
 SUMMARY:Asie 2027 : Train Đà Nẵng → Diêu Trì
@@ -346,7 +365,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:resa-2027-08-04@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270804
 DTEND;VALUE=DATE:20270805
 SUMMARY:Asie 2027 : Bus TBS → Mersing + ferry Tioman
@@ -364,7 +383,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:resa-2027-08-07@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270807
 DTEND;VALUE=DATE:20270808
 SUMMARY:Asie 2027 : Carte d'arrivée Malaisie
@@ -382,7 +401,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:prep-0@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20261115
 DTEND;VALUE=DATE:20261116
 SUMMARY:Asie 2027 : Vérifier les passeports
@@ -399,7 +418,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:prep-1@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270115
 DTEND;VALUE=DATE:20270116
 SUMMARY:Asie 2027 : Demander le permis international
@@ -416,7 +435,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:prep-2@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270315
 DTEND;VALUE=DATE:20270316
 SUMMARY:Asie 2027 : Vérifier l'exemption de visa chinoise pour 2027
@@ -432,7 +451,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:prep-3@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270415
 DTEND;VALUE=DATE:20270416
 SUMMARY:Asie 2027 : Rendez-vous vaccins
@@ -449,7 +468,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:prep-4@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270601
 DTEND;VALUE=DATE:20270602
 SUMMARY:Asie 2027 : Théorie PADI en ligne
@@ -465,7 +484,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:prep-5@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270615
 DTEND;VALUE=DATE:20270616
 SUMMARY:Asie 2027 : Alipay\, VPN\, eSIM\, Grab
@@ -482,7 +501,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:prep-6@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270620
 DTEND;VALUE=DATE:20270621
 SUMMARY:Asie 2027 : Inscription sur Ariane
@@ -498,7 +517,7 @@ END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:prep-7@asie2027
-DTSTAMP:20261114T132943Z
+DTSTAMP:20261114T135121Z
 DTSTART;VALUE=DATE:20270624
 DTEND;VALUE=DATE:20270625
 SUMMARY:Asie 2027 : Météo et typhons

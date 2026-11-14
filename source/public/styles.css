@@ -573,3 +573,20 @@ input.filled, textarea.filled { border-color: var(--accent); background: color-m
 @keyframes ipop { from { opacity: 0; transform: scale(.2); } to { opacity: 1; transform: scale(1); } }
 .introt { margin: 0; font-size: 26px; font-weight: 800; color: var(--accent); opacity: 0; animation: fadeup .35s .9s forwards; }
 .legveh { animation-duration: 8s !important; }
+/* logements : où chercher */
+.stay p { margin: .25rem 0; }
+.stay .bksites { margin-top: .5rem; }
+.stayfirst { display: inline-block; font-size: .72rem; font-weight: 600; color: #8A5A00; background: #FCEFD2; border-radius: 99px; padding: .1rem .5rem; margin-bottom: .25rem; }
+details.stayrow { border-bottom: 1px solid var(--line, rgba(0,0,0,.08)); }
+details.stayrow:last-child { border-bottom: 0; }
+details.stayrow > summary { list-style: none; display: flex; gap: .6rem; align-items: center; padding: .65rem .2rem; cursor: pointer; }
+details.stayrow > summary::-webkit-details-marker { display: none; }
+details.stayrow > summary::after { content: "›"; margin-left: auto; transition: transform .2s; opacity: .5; font-size: 1.2rem; }
+details.stayrow[open] > summary::after { transform: rotate(90deg); }
+details.stayrow > summary > span:nth-child(2) { display: flex; flex-direction: column; }
+details.stayrow > summary small { opacity: .65; }
+details.stayrow > .stay { padding: 0 .2rem .8rem 2.3rem; }
+details.card.stayrow { padding: 0 .8rem; margin-bottom: .8rem; }
+details.card.stayrow > .stay { padding-left: .2rem; }
+details.stayrow > summary .stnum { flex-shrink: 0; margin-right: 0; }
+details.stayrow > summary .stayfirst { align-self: flex-start; margin: .15rem 0; }

@@ -23,7 +23,7 @@ export const SITES = {
   whatsapp: ["WhatsApp", "https://wa.me/"],
 };
 
-const H_CN = ["booking", "agoda", "trip"], H = ["booking", "agoda"];
+const H_CN = ["trip", "booking"], H = ["agoda", "booking"], H_HK = ["booking", "agoda"];
 const TR_CN = ["trains", "c12306"], TR_VN = ["dsvn", "g12go", "baolau"];
 
 // titre de la réservation → [à partir du (AAAA-MM-JJ), quand, sites, conseil]
@@ -31,7 +31,7 @@ export const BOOKING = {
   "Vol Nice → Hong Kong": ["2026-12-01", "Décembre à mars, avant avril", ["gflights", "skyscanner"], "Escale sur le même billet, bagage en soute inclus. Alerte de prix dès maintenant."],
   "Vol Kuala Lumpur → Nice": ["2026-12-01", "Décembre à mars, avant avril", ["gflights", "skyscanner"], "Idéalement sur le même billet que l'aller."],
   "Assurance voyage": ["2026-12-01", "Dès l'achat des vols", [], "Annulation, santé, rapatriement, météo. Vérifier d'abord ce que couvre la carte bancaire."],
-  "Hôtel Hong Kong (3 nuits)": ["2027-04-01", "Avril", H_CN, "Annulation gratuite si possible."],
+  "Hôtel Hong Kong (3 nuits)": ["2026-11-14", "Dès maintenant (très demandé)", H_HK, "Annulation gratuite si possible."],
   "Train G6080 Hong Kong → Zhangjiajie-Ouest": ["2027-06-01", "Demande dès début juin, ventes vers le 14 juin", TR_CN, "Un seul train par jour : déposer la demande sur Trip.com dès début juin, elle part à l'ouverture."],
   "Hôtel Zhangjiajie ville (1 nuit)": ["2027-04-01", "Avril", H_CN, "Vérifier que l'hôtel accepte les étrangers."],
   "Mont Tianmen (billet nominatif)": ["2027-06-26", "3 ou 4 jours avant", ["trip"], "Billet lié au passeport."],
@@ -40,12 +40,12 @@ export const BOOKING = {
   "Train Zhangjiajie-Ouest → Furongzhen": ["2027-06-17", "Vers le 17 juin", TR_CN, "Ventes environ 15 jours avant."],
   "Auberge Furong Zhen (1 nuit)": ["2027-04-01", "Avril", H_CN, "Vérifier que l'hôtel accepte les étrangers. Vue sur la cascade si possible."],
   "Train Furongzhen → Fenghuang": ["2027-06-18", "Vers le 18 juin", TR_CN, "Ventes environ 15 jours avant."],
-  "Auberge Fenghuang (2 nuits)": ["2027-04-01", "Avril", H_CN, "Chambre avec vue sur la rivière."],
+  "Auberge Fenghuang (2 nuits)": ["2026-11-14", "Dès maintenant (très demandé)", H_CN, "Chambre avec vue sur la rivière."],
   "Trains Fenghuang → Anshun": ["2027-06-20", "Vers le 20 juin", TR_CN, "Ventes environ 15 jours avant."],
   "Hôtel Huangguoshu (1 nuit)": ["2027-04-01", "Avril", H_CN, ""],
   "Train Anshun → Kunming": ["2027-06-21", "Vers le 21 juin", TR_CN, "À prendre en même temps que le train de nuit."],
   "Train de nuit Y752 Kunming → Lijiang": ["2027-06-21", "Vers le 21 juin", TR_CN, "Couchette molle (soft sleeper)."],
-  "Halfway Guesthouse (1 nuit)": ["2027-04-01", "Avril", ["trip", "booking"], "Chambre avec vue, ça part vite en été."],
+  "Halfway Guesthouse (1 nuit)": ["2026-11-14", "Dès maintenant (très demandé)", ["trip", "booking"], "Chambre avec vue, ça part vite en été. Sinon, les contacter directement."],
   "Hôtel Shangri-La (2 nuits)": ["2027-04-01", "Avril", H_CN, ""],
   "Train Shangri-La → Dali": ["2027-06-25", "Vers le 25 juin, le jour du départ", TR_CN, "Ventes environ 15 jours avant."],
   "Guesthouse Dali (2 nuits)": ["2027-04-01", "Avril", H_CN, ""],
@@ -61,7 +61,7 @@ export const BOOKING = {
   "Guesthouse Phong Nha (3 nuits)": ["2027-05-01", "Mai", H, ""],
   "Excursion Tu Lan": ["2027-05-01", "Mai", ["oxalis"], "Places limitées."],
   "Train Đồng Hới → Đà Nẵng": ["2027-07-22", "Quelques jours avant", TR_VN, ""],
-  "Villa Hội An (4 nuits)": ["2027-04-01", "Avril", H, "Avec piscine."],
+  "Villa Hội An (4 nuits)": ["2026-11-14", "Dès maintenant (très demandé)", H, "Avec piscine."],
   "Train Đà Nẵng → Diêu Trì": ["2027-07-26", "Quelques jours avant", TR_VN, ""],
   "Hôtel Quy Nhon (2 nuits)": ["2027-05-01", "Mai", H, ""],
   "Train de nuit SE1 Diêu Trì → Saigon": ["2027-07-18", "1 à 2 semaines avant", TR_VN, "Couchette à 4."],
@@ -74,7 +74,7 @@ export const BOOKING = {
   "Carte d'arrivée Malaisie (MDAC)": ["2027-08-07", "Dans les 3 jours avant l'arrivée", ["mdac"], "Gratuit, uniquement sur le site officiel."],
   "Bus TBS → Mersing + ferry Tioman": ["2027-08-04", "Environ 1 semaine avant", ["g12go", "easybook"], "Horaires du ferry selon les marées."],
   "PADI Open Water": ["2027-05-01", "Mai (choisir le centre dès février)", [], "Récupérer le code de la théorie en ligne."],
-  "Chalet Tioman (6 nuits)": ["2027-05-01", "Mai", H, "Salang ou Air Batang."],
+  "Chalet Tioman (6 nuits)": ["2027-05-01", "Mai", ["whatsapp", "agoda", "booking"], "Salang ou Air Batang. Souvent via le centre de plongée (cours + logement), ou en direct sur WhatsApp."],
   "Hôtel Kuala Lumpur (1 nuit)": ["2027-04-01", "Avril", H, "Piscine sur le toit."],
 };
 
