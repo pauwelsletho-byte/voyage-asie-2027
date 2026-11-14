@@ -590,3 +590,6 @@ details.card.stayrow { padding: 0 .8rem; margin-bottom: .8rem; }
 details.card.stayrow > .stay { padding-left: .2rem; }
 details.stayrow > summary .stnum { flex-shrink: 0; margin-right: 0; }
 details.stayrow > summary .stayfirst { align-self: flex-start; margin: .15rem 0; }
+details.stayrow > summary .staybooked { align-self: flex-start; font-size: .72rem; font-weight: 600; color: #1F6B44; background: #DDF2E6; border-radius: 99px; padding: .1rem .5rem; margin: .15rem 0; }
+details.stayrow.booked > summary b { opacity: .6; }
+details.staytips > summary { cursor: pointer; color: var(--muted); font-size: .9rem; padding: .3rem 0; }

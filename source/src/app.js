@@ -235,7 +235,7 @@ function stageBlock(st, iso, opt = {}) {
     ${wxLine(st)}
     ${opt.noGuide ? "" : guideFor(st.id).length ? `<h3>Le programme en détail</h3><div class="guide">${guideFor(st.id).map((g) => guideItem(st, g, false)).join("")}</div>`
       : `<h3>À faire</h3><ul>${st.todo.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>`}
-    <h3>Où dormir</h3>${stayBlock(st)}
+    <h3>Où dormir</h3>${stayBooked(st) ? `<details class="staytips"><summary>Où chercher (déjà réservé)</summary>${stayBlock(st, true)}</details>` : stayBlock(st)}
     ${hotels.length ? hotels.map(resaCard).join("") : ""}
     ${(() => { const g = foodsForStage(st.id); return g ? `<h3>À goûter</h3><p class="foodline">${g.items.map(([fr]) => esc(fr)).join(" · ")}</p>` : ""; })()}
     ${showList(st)}
@@ -686,14 +686,17 @@ function openPaste() {
   };
 }
 
+const stayBooked = (st) => { const h = hotelsFor(st); return h.length > 0 && h.every((r) => r.status === "reserve"); };
 function stayBlock(st, noBadge) {
   const s = STAYS[st.id]; if (!s) return `<p>${esc(st.sleep)}</p>`;
   return `<div class="stay">${s[3] && !noBadge ? `<span class="stayfirst">À réserver en premier</span>` : ""}<p><b>${esc(s[0])}</b></p><p class="muted small">${esc(s[1])}</p>${staySites(st.id).length ? `<div class="bksites">${staySites(st.id).map(([n, u]) => `<a class="chip" href="${esc(u)}" target="_blank" rel="noopener">${esc(n)} ↗</a>`).join("")}</div>` : ""}</div>`;
 }
 function staysPrep() {
   const nights = (st) => daysBetween(st.from, st.to) + (st.extra || []).reduce((a, [f, t]) => a + daysBetween(f, t), 0);
-  const rows = STAGES.filter((st) => STAYS[st.id] && st.id !== "croisiere").map((st) => `<details class="stayrow"><summary><span class="stnum" style="--c:${COUNTRIES[st.c].color}">${stageNum(st.id)}</span><span><b>${esc(st.name.replace(" (nuit tampon)", ", 1re nuit"))}</b>${STAYS[st.id][3] ? ` <span class="stayfirst">en premier</span>` : ""}<small>${esc(fmt(st.from))} · ${nights(st)} ${nights(st) > 1 ? "nuits" : "nuit"}</small></span></summary>${stayBlock(st, true)}</details>`).join("");
-  return `<h2 class="sect">Logements : où chercher</h2>
+  const list = STAGES.filter((st) => STAYS[st.id] && st.id !== "croisiere"), nb = list.filter(stayBooked).length;
+  const rows = list.map((st) => { const ok = stayBooked(st);
+    return `<details class="stayrow${ok ? " booked" : ""}"><summary><span class="stnum" style="--c:${COUNTRIES[st.c].color}">${stageNum(st.id)}</span><span><b>${esc(st.name.replace(" (nuit tampon)", ", 1re nuit"))}</b>${ok ? `<span class="staybooked">✓ Réservé</span>` : STAYS[st.id][3] ? `<span class="stayfirst">en premier</span>` : ""}<small>${esc(fmt(st.from))} · ${nights(st)} ${nights(st) > 1 ? "nuits" : "nuit"}</small></span></summary>${ok ? `<div class="stay">${hotelsFor(st).map((r) => `<p>✓ <b>${esc(r.title)}</b>${r.ref ? ` · n° ${esc(r.ref)}` : ""}</p>`).join("")}</div>` : stayBlock(st, true)}</details>`; }).join("");
+  return `<h2 class="sect">Logements : où chercher · ${nb}/${list.length} réservés</h2>
     <details class="card stayrow"><summary><span class="stnum" style="--c:#5B6964">?</span><span><b>Quels sites selon le pays</b></span></summary><div class="stay">${STAY_SITES.map(([p, t]) => `<p><b>${esc(p)}</b> · ${esc(t)}</p>`).join("")}</div></details>
     <div class="card list">${rows}</div>`;
 }
