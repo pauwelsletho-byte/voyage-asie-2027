@@ -627,6 +627,37 @@ TRIGGER:PT9H
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
+UID:cancel-seed-10-auberge-fenghuang-2-nuits-@asie2027
+DTSTAMP:20260101T000000Z
+DTSTART;VALUE=DATE:20270703
+DTEND;VALUE=DATE:20270704
+SUMMARY:⏳ Dernier jour pour annuler gratuitement : Fenghuang Siyuetian I
+ nn (2 nuits)
+DESCRIPTION:Annulation gratuite jusqu'au 03/07/2027 inclus. Réservation 
+ n° 1653718517964852.\n\nDétails et liens dans l'appli : https://pauwels
+ letho-byte.github.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:⏳ Dernier jour pour annuler gratuitement : Fenghuang Siyueti
+ an Inn (2 nuits)
+TRIGGER:-P2DT15H
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:⏳ Dernier jour pour annuler gratuitement : Fenghuang Siyueti
+ an Inn (2 nuits)
+TRIGGER:-PT15H
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:⏳ Dernier jour pour annuler gratuitement : Fenghuang Siyueti
+ an Inn (2 nuits)
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:cancel-seed-47-auberge-furong-zhen-1-nuit-@asie2027
 DTSTAMP:20260101T000000Z
 DTSTART;VALUE=DATE:20270702
