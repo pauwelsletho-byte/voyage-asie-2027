@@ -854,7 +854,7 @@ function openResa(r) {
       <label class="onsite"><input type="checkbox" name="payOnSite" ${r.payOnSite ? "checked" : ""}><span>💵 Paiement sur place <small>(à l'arrivée, rappel la veille et le jour même)</small></span></label>
       <div class="two">
         <label>Montant payé pour 2 (€)<input name="paid" inputmode="decimal" value="${esc(r.paid ?? "")}" placeholder="Une fois payé"></label>
-        <label>Payé par<select name="paidBy">${Object.entries(people()).map(([k, n]) => `<option value="${k}" ${(r.paidBy || me()) === k ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
+        <label>Payé par<select name="paidBy"><option value="" ${!(r.paidBy ?? (r.paid ? me() : "")) ? "selected" : ""}>Pas encore payé</option>${Object.entries(people()).map(([k, n]) => `<option value="${k}" ${(r.paidBy ?? (r.paid ? me() : "")) === k ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
       </div>
       <label>Adresse ou lieu<input name="place" value="${esc(r.place || "")}"></label>
       <label>Adresse en langue locale (à montrer au chauffeur)<textarea name="localAddr" rows="2" placeholder="Copiez ici l'adresse en chinois ou en vietnamien de la confirmation">${esc(r.localAddr || "")}</textarea></label>
@@ -1017,7 +1017,7 @@ function resaSpend() {
     const n = r.type === "hotel" ? Number((r.title || "").match(/\((\d+) nuits?\)/)?.[1] || 1) : 1;
     for (let i = 0; i < n; i++) {
       const iso = isoOf(new Date(D(r.date).getTime() + i * 86400000));
-      out.push({ date: iso, eur: r.paid / n, payer: r.paidBy || "p1", split: "both", pre: true });
+      out.push({ date: iso, eur: r.paid / n, payer: r.paidBy || "", split: "both", pre: true });
     }
   });
   return out;
@@ -1069,7 +1069,7 @@ function viewMoney() {
   const pre = resaSpend(), all = [...ex, ...pre];
   const total = all.reduce((t, e) => t + (e.eur || 0), 0), preTotal = pre.reduce((t, e) => t + e.eur, 0);
   const net = { p1: 0, p2: 0 };
-  all.forEach((e) => { const v = e.eur || 0, payer = e.payer || "p1", other = payer === "p1" ? "p2" : "p1";
+  all.forEach((e) => { if (!e.payer) return; const v = e.eur || 0, payer = e.payer, other = payer === "p1" ? "p2" : "p1";
     net[payer] += v; if (e.split === "payer") net[payer] -= v; else if (e.split === "other") net[other] -= v; else { net.p1 -= v / 2; net.p2 -= v / 2; } });
   const owe = net.p1 > 0.5 ? `${esc(P.p2)} doit ${money(Math.round(net.p1))} à ${esc(P.p1)}` : net.p2 > 0.5 ? `${esc(P.p1)} doit ${money(Math.round(net.p2))} à ${esc(P.p2)}` : "Vous êtes quittes";
   const byCountry = {}; ex.forEach((e) => { const c = e.country || countryOn(e.date); byCountry[c] = (byCountry[c] || 0) + (e.eur || 0); });
