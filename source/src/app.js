@@ -1016,13 +1016,14 @@ const whereOn = (iso) => stageOn(iso) || stageById[dayRow(iso)?.[1]] || (iso >= 
 
 /* ---------- Dépenses ---------- */
 // Réservations payées → comptées dans le budget (un hôtel est réparti sur ses nuits)
+const RESA_CAT = { hotel: "logement", vol: "transport", train: "transport", bus: "transport", moto: "transport", activite: "activite", admin: "autre" };
 function resaSpend() {
   const out = [];
   S.resas.filter((r) => Number(r.paid) > 0 && r.date).forEach((r) => {
     const n = r.type === "hotel" ? Number((r.title || "").match(/\((\d+) nuits?\)/)?.[1] || 1) : 1;
     for (let i = 0; i < n; i++) {
       const iso = isoOf(new Date(D(r.date).getTime() + i * 86400000));
-      out.push({ date: iso, eur: r.paid / n, payer: r.paidBy || "", split: "both", pre: true });
+      out.push({ date: iso, eur: r.paid / n, payer: r.paidBy || "", split: "both", pre: true, cat: RESA_CAT[r.type] || "autre", desc: r.title });
     }
   });
   return out;
@@ -1036,6 +1037,14 @@ function budgetPlan(budget) {
   const perDay = (c) => (Math.max(0, budget - INTL_EST) * (COST_W[c] || 0)) / sumW;
   const nDays = {}; days.forEach(([, c]) => { if (COST_W[c]) nDays[c] = (nDays[c] || 0) + 1; });
   return { days, perDay, nDays };
+}
+// détail par catégorie (repas, hébergement, transport…) d'une liste de dépenses
+function catBreak(list, color) {
+  if (!list.length) return `<p class="muted small cbreak">Rien de payé pour l'instant.</p>`;
+  const by = {}; list.forEach((e) => { const k = e.cat || "autre"; (by[k] ||= { v: 0, n: 0, items: {} }).v += e.eur || 0; by[k].n++; const d = e.desc || CATEGORIES[k]; by[k].items[d] = (by[k].items[d] || 0) + (e.eur || 0); });
+  const tot = Object.values(by).reduce((s, x) => s + x.v, 0) || 1;
+  return `<div class="cbreak">${Object.entries(by).sort((a, b) => b[1].v - a[1].v).map(([k, x]) => `<details class="catrow"><summary><span>${esc(CATEGORIES[k] || k)}</span><b>${money(Math.round(x.v))}</b><i style="--p:${x.v / tot};--c:${color}"></i></summary>
+    ${Object.entries(x.items).sort((a, b) => b[1] - a[1]).map(([d, v]) => `<div class="catitem"><span>${esc(d)}</span><span>${money(Math.round(v))}</span></div>`).join("")}</details>`).join("")}</div>`;
 }
 function budgetDaily(ex, budget) {
   const t = todayIso(), plan = budgetPlan(budget);
@@ -1058,14 +1067,14 @@ function budgetDaily(ex, budget) {
   const rows = Object.keys(plan.nDays).map((c) => {
     const planned = plan.perDay(c) * plan.nDays[c], sp = by[c] || 0;
     const elapsed = plan.days.filter(([iso, cc]) => cc === c && iso <= t).length;
-    return `<div class="cbar ${sp > planned ? "over" : ""}" style="--c:${COUNTRIES[c].color}"><span>${esc(COUNTRIES[c].name)} <small class="muted">· ${plan.nDays[c]} j</small></span>
+    return `<details class="cdet"><summary><div class="cbar ${sp > planned ? "over" : ""}" style="--c:${COUNTRIES[c].color}"><span>${esc(COUNTRIES[c].name)} <small class="muted">· ${plan.nDays[c]} j</small></span>
       <b>${sp ? money(Math.round(sp)) + " <small>/ " : "<small>"}${money(Math.round(planned))}</small></b><i style="--p:${Math.min(1, sp / planned)}"></i>
-      <small class="muted cday">Prévu ${money(Math.round(plan.perDay(c)))} par jour${elapsed && sp ? ` · dépensé ${money(Math.round(sp / elapsed))} par jour en moyenne` : ""}</small></div>`;
+      <small class="muted cday">Prévu ${money(Math.round(plan.perDay(c)))} par jour${elapsed && sp ? ` · dépensé ${money(Math.round(sp / elapsed))} par jour en moyenne` : ""}</small></div></summary>${catBreak(ex.filter((e) => (e.country || countryOn(e.date)) === c), COUNTRIES[c].color)}</details>`;
   }).join("");
   const fr = by.fr || 0;
-  const other = `<div class="cbar ${fr > INTL_EST ? "over" : ""}" style="--c:${COUNTRIES.fr.color}"><span>Vols internationaux et divers</span><b>${fr ? money(Math.round(fr)) + " <small>/ " : "<small>"}${money(INTL_EST)}</small></b><i style="--p:${Math.min(1, fr / INTL_EST)}"></i></div>`;
+  const other = `<details class="cdet"><summary><div class="cbar ${fr > INTL_EST ? "over" : ""}" style="--c:${COUNTRIES.fr.color}"><span>Vols internationaux et divers</span><b>${fr ? money(Math.round(fr)) + " <small>/ " : "<small>"}${money(INTL_EST)}</small></b><i style="--p:${Math.min(1, fr / INTL_EST)}"></i></div></summary>${catBreak(ex.filter((e) => (e.country || countryOn(e.date)) === "fr"), COUNTRIES.fr.color)}</details>`;
   return `${top}<h2 class="sect">Budget par pays</h2><div class="card">${rows}${other}
-    <p class="muted small">Tout compte : dépenses sur place et réservations payées (un hôtel est réparti sur ses nuits). Le budget est réparti selon le coût de la vie, plus élevé à Hong Kong et en Malaisie, plus bas au Vietnam ; il se règle dans Outils › Réglages.</p></div>`;
+    <p class="muted small">Touchez un pays pour le détail par catégorie. Tout compte : dépenses sur place et réservations payées (un hôtel est réparti sur ses nuits). Le budget est réparti selon le coût de la vie, plus élevé à Hong Kong et en Malaisie, plus bas au Vietnam ; il se règle dans Outils › Réglages.</p></div>`;
 }
 
 function viewMoney() {

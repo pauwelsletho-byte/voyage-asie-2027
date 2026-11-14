@@ -610,3 +610,12 @@ button.card.alert.dl { width: 100%; text-align: left; font: inherit; color: inhe
 .payrow { display: flex; justify-content: space-between; gap: 10px; width: 100%; text-align: left; background: none; border: 0; border-top: 1px dashed var(--line); padding: 9px 0; font: inherit; color: inherit; cursor: pointer; }
 .payrow span:first-child { display: flex; flex-direction: column; } .payrow small { color: var(--muted); font-size: 13px; }
 .payrow .pamt { font-weight: 600; white-space: nowrap; }
+/* budget par pays : détail par catégorie */
+details.cdet > summary { list-style: none; cursor: pointer; }
+details.cdet > summary::-webkit-details-marker { display: none; }
+details.cdet[open] > summary .cbar { border-bottom-color: transparent; }
+.cbreak { padding: 0 2px 10px 12px; border-left: 3px solid var(--line); margin: -4px 0 10px; }
+.catrow > summary { list-style: none; display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 7px 0; cursor: pointer; font-size: 14px; }
+.catrow > summary::-webkit-details-marker { display: none; }
+.catrow > summary i { grid-column: 1 / -1; height: 4px; border-radius: 4px; background: linear-gradient(90deg, var(--c) calc(var(--p) * 100%), var(--soft) 0); }
+.catitem { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--muted); padding: 3px 0 3px 10px; }
