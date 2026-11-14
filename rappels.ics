@@ -595,4 +595,62 @@ DESCRIPTION:⏳ Dernier jour pour annuler gratuitement : Hôtel California
 TRIGGER:PT9H
 END:VALARM
 END:VEVENT
+BEGIN:VEVENT
+UID:cancel-seed-07-guesthouse-wulingyuan-2-nuits-@asie2027
+DTSTAMP:20260101T000000Z
+DTSTART;VALUE=DATE:20270629
+DTEND;VALUE=DATE:20270630
+SUMMARY:⏳ Dernier jour pour annuler gratuitement : Tongfu Inn\,(entrée p
+ orte Ouest) Yangjiajie (2 nuits)
+DESCRIPTION:Annulation gratuite jusqu'au 29/06/2027 inclus. Réservation 
+ n° 5582.559.155.\n\nDétails et liens dans l'appli : https://pauwelsleth
+ o-byte.github.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:⏳ Dernier jour pour annuler gratuitement : Tongfu Inn\,(entr
+ ée porte Ouest) Yangjiajie (2 nuits)
+TRIGGER:-P2DT15H
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:⏳ Dernier jour pour annuler gratuitement : Tongfu Inn\,(entr
+ ée porte Ouest) Yangjiajie (2 nuits)
+TRIGGER:-PT15H
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:⏳ Dernier jour pour annuler gratuitement : Tongfu Inn\,(entr
+ ée porte Ouest) Yangjiajie (2 nuits)
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:cancel-seed-47-auberge-furong-zhen-1-nuit-@asie2027
+DTSTAMP:20260101T000000Z
+DTSTART;VALUE=DATE:20270702
+DTEND;VALUE=DATE:20270703
+SUMMARY:⏳ Dernier jour pour annuler gratuitement : Tuwang Palace
+DESCRIPTION:Annulation gratuite jusqu'au 02/07/2027 inclus. Réservation 
+ n° 1653718517850011.\n\nDétails et liens dans l'appli : https://pauwels
+ letho-byte.github.io/voyage-asie-2027/
+URL:https://pauwelsletho-byte.github.io/voyage-asie-2027/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:⏳ Dernier jour pour annuler gratuitement : Tuwang Palace
+TRIGGER:-P2DT15H
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:⏳ Dernier jour pour annuler gratuitement : Tuwang Palace
+TRIGGER:-PT15H
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:⏳ Dernier jour pour annuler gratuitement : Tuwang Palace
+TRIGGER:PT9H
+END:VALARM
+END:VEVENT
 END:VCALENDAR
