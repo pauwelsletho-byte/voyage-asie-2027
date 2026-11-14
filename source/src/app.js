@@ -210,6 +210,12 @@ const resasOn = (iso) => S.resas.filter((r) => r.date === iso).sort(byDate);
 const bkFrom = (r) => bookingFor(r)?.from || r.date || "9";
 const byBooking = (a, b) => bkFrom(a).localeCompare(bkFrom(b)) || byDate(a, b);
 const byDate = (a, b) => (a.date || "9").localeCompare(b.date || "9") || (a.time || "").localeCompare(b.time || "");
+// tout ce qui reste à réserver pour une étape (hors hôtels), y compris le trajet pour y arriver
+const todoFor = (st) => {
+  const ranges = [[st.from, st.to], ...(st.extra || [])];
+  if (st === STAGES[0]) ranges.push([TRIP.start, st.from]);
+  if (st.id === "kl2") { const k1 = stageById.kl1; ranges.push([k1.from, k1.to], [st.to, isoOf(new Date(D(TRIP.end).getTime() + 86400000))]); }
+  return S.resas.filter((r) => r.type !== "hotel" && r.status !== "reserve" && ranges.some(([f, t]) => r.date >= f && r.date < t)).sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || ""))); };
 const hotelsFor = (stage) => stage ? S.resas.filter((r) => r.type === "hotel" && r.date >= stage.from && r.date < stage.to) : [];
 
 function resaCard(r) {
@@ -240,6 +246,7 @@ function stageBlock(st, iso, opt = {}) {
     ${(() => { const g = foodsForStage(st.id); return g ? `<h3>À goûter</h3><p class="foodline">${g.items.map(([fr]) => esc(fr)).join(" · ")}</p>` : ""; })()}
     ${showList(st)}
     ${st.tip ? `<p class="tip">${esc(st.tip)}</p>` : ""}
+    ${(() => { const todo = todoFor(st); return todo.length ? `<h3>Encore à réserver · ${todo.length}</h3><p class="muted small">Billets, trajets et entrées de cette étape, tant qu'ils ne sont pas marqués « Réservé ».</p>${todo.map(resaCard).join("")}` : ""; })()}
   </section>`;
 }
 
