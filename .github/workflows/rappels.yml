@@ -1,0 +1,29 @@
+name: Rappels (annulations et paiements)
+on:
+  schedule:
+    - cron: "17 * * * *"
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  rappels:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Générer rappels.ics
+        working-directory: source
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          npm install --no-save --no-package-lock firebase-admin@13
+          node rappels-firestore.mjs ../rappels.ics
+      - name: Publier si changé
+        run: |
+          if git diff --quiet -- rappels.ics; then echo "Rien de nouveau"; exit 0; fi
+          git config user.name "Rappels" && git config user.email "actions@github.com"
+          git add rappels.ics && git commit -m "Rappels : échéances mises à jour" && git push

@@ -63,6 +63,11 @@ export function parseConfirmation(txt, { start, end, rates }) {
     const pick = (near.length ? near : valid).reduce((a, b) => (toE(b) > toE(a) ? b : a));
     out.paid = Math.round(toE(pick) * 100) / 100; out.paidCur = pick.cur; out.paidRaw = pick.v;
   }
+  // annulation gratuite et date de paiement (n'importe quelle date, pas forcément pendant le voyage)
+  const all = findDates(txt);
+  const after = (re, max = 140) => { for (const m of low.matchAll(re)) { const d = all.find((x) => x.idx > m.index && x.idx - m.index < max); if (d) return d.iso; } return null; };
+  out.cancelBy = after(/annulation gratuite|annuler gratuitement|annulable gratuitement|sans frais d'annulation|free cancell?ation|cancel for free|free of charge until|cancell?ation is free|免费取消/g);
+  out.payOn = after(/vous paierez|vous serez débité|sera débité|sera prélevé|prélèvement le|paiement le|payer le|paiement prévu|à payer avant|pay on|you'?ll pay|you will be charged|will be charged on|payment (?:due|date|on)|charged on/g);
   // adresse
   const adr = txt.match(/(?:adresse|address)\s*[:：]?\s*([^\n]{8,120})/i);
   if (adr) out.place = adr[1].trim();

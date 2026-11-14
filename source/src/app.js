@@ -224,7 +224,7 @@ function resaCard(r) {
   return `<button class="card resa ${r.status}" data-resa="${esc(r.id)}">
     <span class="rico t-${r.type}">${icon(r.type)}</span>
     <span class="rmain"><strong>${esc(r.title)}</strong>
-      <small>${esc(fmt(r.date))}${r.time ? " · " + esc(r.time) : ""}${r.ref ? " · n° " + esc(r.ref) : ""}${r.paid ? " · payé " + esc(money(r.paid)) : r.price ? " · " + esc(r.price) : ""}</small>${bk && r.status !== "reserve" ? `<small class="bk ${bk.from <= todayIso() ? "now" : ""}">${bk.from <= todayIso() ? "À faire maintenant" : "À réserver : " + esc(bk.when)}${bk.sites.length ? " · " + esc(bk.sites.slice(0, 3).map((x) => x[0]).join(", ")) : ""}</small>` : ""}</span>
+      <small>${esc(fmt(r.date))}${r.time ? " · " + esc(r.time) : ""}${r.ref ? " · n° " + esc(r.ref) : ""}${r.paid ? " · payé " + esc(money(r.paid)) : r.price ? " · " + esc(r.price) : ""}</small>${bk && r.status !== "reserve" ? `<small class="bk ${bk.from <= todayIso() ? "now" : ""}">${bk.from <= todayIso() ? "À faire maintenant" : "À réserver : " + esc(bk.when)}${bk.sites.length ? " · " + esc(bk.sites.slice(0, 3).map((x) => x[0]).join(", ")) : ""}</small>` : ""}${(r.cancelBy && r.cancelBy >= todayIso()) || (r.payOn && r.payOn >= todayIso() && !r.paid) ? `<small class="dlline">${r.cancelBy && r.cancelBy >= todayIso() ? `⏳ Annulable jusqu'au ${esc(fmt(r.cancelBy))}` : ""}${r.cancelBy && r.cancelBy >= todayIso() && r.payOn && r.payOn >= todayIso() && !r.paid ? " · " : ""}${r.payOn && r.payOn >= todayIso() && !r.paid ? `💳 Paiement le ${esc(fmt(r.payOn))}` : ""}</small>` : ""}</span>
     <span class="rside"><span class="badge ${r.status}">${STATUS[r.status] || "—"}</span>${nf ? `<span class="clip">${nf} ${nf > 1 ? "fichiers" : "fichier"}</span>` : ""}</span>
   </button>`;
 }
@@ -354,6 +354,19 @@ function alertsList(t) {
 function alertCards(list) {
   return list.map((a) => `<div class="card alert ${a.lvl}"><span class="aico">${a.icon}</span><div><b>${esc(a.title)}</b><p>${esc(a.text)}</p>
     ${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">Voir la trajectoire (${esc(a.src)}) ↗</a>` : a.wx ? `<button class="link" data-wxday="${esc(a.wx)}">Voir le détail heure par heure</button>` : ""}</div></div>`).join("");
+}
+// échéances : dernier jour pour annuler gratuitement, date de paiement (dans les 14 jours)
+function deadlines(t, days = 14) {
+  const lim = isoOf(new Date(D(t).getTime() + days * 86400000)), out = [];
+  const inN = (d) => { const n = daysBetween(t, d); return n === 0 ? "aujourd'hui" : n === 1 ? "demain" : `dans ${n} jours`; };
+  S.resas.forEach((r) => {
+    if (r.cancelBy && r.cancelBy >= t && r.cancelBy <= lim) out.push({ d: r.cancelBy, r, icon: "⏳", title: `Annulation gratuite jusqu'au ${fmt(r.cancelBy)} (${inN(r.cancelBy)})`, text: r.title });
+    if (r.payOn && r.payOn >= t && r.payOn <= lim) out.push({ d: r.payOn, r, icon: "💳", title: `Paiement le ${fmt(r.payOn)} (${inN(r.payOn)})`, text: r.title + (r.price ? " · " + r.price : "") });
+  });
+  return out.sort((a, b) => a.d.localeCompare(b.d));
+}
+function deadlineCards(t) {
+  return deadlines(t).map((a) => `<button class="card alert warn dl" data-resa="${esc(a.r.id)}"><span class="aico">${a.icon}</span><div><b>${esc(a.title)}</b><p>${esc(a.text)}</p></div></button>`).join("");
 }
 function homeAlerts(t) { const l = alertsList(t).filter((a) => a.lvl !== "info"); return l.length ? alertCards(l) : ""; }
 
@@ -612,6 +625,7 @@ function viewToday() {
         <div><span>Réservations</span><b>${done}/${S.resas.length}</b><i style="--p:${S.resas.length ? done / S.resas.length : 0}"></i></div>
         <div><span>Préparatifs</span><b>${checksDone}/${CHECKLIST.length}</b><i style="--p:${checksDone / CHECKLIST.length}"></i></div>
       </div></div></section>
+    ${deadlineCards(t)}
     ${tripMap(t)}
     <h2 class="sect">Prochaines réservations à faire</h2>
     ${todo.slice(0, 6).map(resaCard).join("") || `<p class="muted pad">Tout est réservé.</p>`}
@@ -623,7 +637,7 @@ function viewToday() {
   const st = stageOn(t) || stageById[dayRow(t)?.[1]];
   const today = resasOn(t), tom = resasOn(tomorrow);
   const here = whereOn(t);
-  return `<section class="hero deco scenehero">${scene(here?.id, hourIn(TZ[here?.c] || "Asia/Hong_Kong"), "sc")}</section>${homeAlerts(t)}${dayBlock(t)}
+  return `<section class="hero deco scenehero">${scene(here?.id, hourIn(TZ[here?.c] || "Asia/Hong_Kong"), "sc")}</section>${homeAlerts(t)}${deadlineCards(t)}${dayBlock(t)}
     ${wxCard(t)}
     ${tripMap(t)}
     ${today.length ? `<h2 class="sect">Aujourd'hui</h2>${today.map(resaCard).join("")}` : ""}
@@ -833,6 +847,10 @@ function openResa(r) {
         <label>Prix estimé<input name="price" value="${esc(r.price || "")}"></label>
       </div>
       <div class="two">
+        <label>Annulable jusqu'au<input type="date" name="cancelBy" value="${esc(r.cancelBy || "")}"></label>
+        <label>Paiement le<input type="date" name="payOn" value="${esc(r.payOn || "")}"></label>
+      </div>
+      <div class="two">
         <label>Montant payé pour 2 (€)<input name="paid" inputmode="decimal" value="${esc(r.paid ?? "")}" placeholder="Une fois payé"></label>
         <label>Payé par<select name="paidBy">${Object.entries(people()).map(([k, n]) => `<option value="${k}" ${(r.paidBy || me()) === k ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
       </div>
@@ -886,13 +904,15 @@ function openResa(r) {
       set("time", got.time, "heure " + got.time);
       if (got.paid) set("paid", got.paid, "payé " + money(got.paid) + (got.paidCur !== "EUR" ? ` (${money(got.paidRaw, got.paidCur)})` : ""));
       set("place", got.place, "adresse");
+      set("cancelBy", got.cancelBy, "annulation gratuite jusqu'au " + (got.cancelBy ? fmt(got.cancelBy) : ""));
+      set("payOn", got.payOn, "paiement le " + (got.payOn ? fmt(got.payOn) : ""));
       set("localAddr", got.localAddr, "adresse locale");
       if (done.length && f.status.value !== "reserve") { f.status.value = "reserve"; done.push("statut Réservé"); }
       box.innerHTML = done.length ? `<p class="okmsg">Rempli depuis le PDF : ${esc(done.join(" · "))}. Vérifiez puis touchez Enregistrer.</p>`
         : `<p class="muted small">Je n'ai rien trouvé à remplir dans ce PDF. Envoyez-le à Claude dans la conversation si besoin.</p>`;
     } catch (err) { box.innerHTML = `<p class="muted small">Lecture du PDF impossible (${esc(err.message)}).</p>`; }
   }
-  const collect = () => { const f = $("#rf", sh).elements; return { type: f.type.value, title: f.title.value.trim(), status: f.status.value, date: f.date.value, time: f.time.value, ref: f.ref.value.trim(), price: f.price.value.trim(), paid: parseFloat(String(f.paid.value).replace(",", ".").replace(/[^\d.]/g, "")) || null, paidBy: f.paidBy.value, place: f.place.value.trim(), localAddr: f.localAddr.value.trim(), notes: f.notes.value.trim() }; };
+  const collect = () => { const f = $("#rf", sh).elements; return { type: f.type.value, title: f.title.value.trim(), status: f.status.value, date: f.date.value, time: f.time.value, ref: f.ref.value.trim(), price: f.price.value.trim(), paid: parseFloat(String(f.paid.value).replace(",", ".").replace(/[^\d.]/g, "")) || null, paidBy: f.paidBy.value, place: f.place.value.trim(), localAddr: f.localAddr.value.trim(), notes: f.notes.value.trim(), cancelBy: f.cancelBy.value, payOn: f.payOn.value }; };
   const ga = $("#goaddr", sh); if (ga) ga.onclick = () => openGo(r.localAddr || r.place, r.title, (stageOn(r.date) || {}).id);
   const sa = $("#showaddr", sh); if (sa) sa.onclick = () => showBig($("#rf", sh).elements.localAddr.value, $("#rf", sh).elements.title.value);
   $("#rf", sh).onsubmit = async (e) => { e.preventDefault(); const c = collect(); store().put("resas", r.id, { ...c, files, by: S.user?.email || "" }); closeSheet();
@@ -1206,7 +1226,7 @@ function viewRemind() {
     <section class="card"><p>Ajoutez le calendrier <b>« Asie 2027 · rappels »</b> à votre iPhone : le jour où il faut réserver quelque chose, une alerte s'affiche à 9 h avec ce qu'il y a à faire et sur quels sites, même sans ouvrir l'appli.</p>
       <a class="btn primary wide" href="${esc(webcal)}">S'abonner au calendrier</a>
       <ol class="steps"><li>Touchez le bouton, puis <b>S'abonner</b>.</li><li>Sur l'écran suivant, <b>désactivez « Supprimer les alertes »</b>, sinon l'iPhone retire les rappels.</li><li>Touchez <b>Ajouter</b>. C'est tout : le calendrier se met à jour tout seul.</li></ol>
-      <p class="muted small">À faire sur les deux téléphones. Si une réservation est déjà faite, ignorez simplement son rappel.</p></section>
+      <p class="muted small">À faire sur les deux téléphones. Si une réservation est déjà faite, ignorez simplement son rappel.</p><p class="muted small">Les dates « Annulable jusqu'au » et « Paiement le » des réservations s'y ajoutent aussi : alerte 3 jours avant, la veille et le jour même à 9 h (mise à jour toutes les heures).</p></section>
     <h2 class="sect">Prochains rappels</h2><div class="card list">${upcomingReminders().map(([d, txt]) => `<div class="kv"><span>${esc(txt)}</span><b>${esc(fmt(d))}</b></div>`).join("") || `<p class="muted">Plus rien à venir.</p>`}</div>`;
 }
 function upcomingReminders() {

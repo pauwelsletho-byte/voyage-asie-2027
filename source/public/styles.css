@@ -593,3 +593,6 @@ details.stayrow > summary .stayfirst { align-self: flex-start; margin: .15rem 0;
 details.stayrow > summary .staybooked { align-self: flex-start; font-size: .72rem; font-weight: 600; color: #1F6B44; background: #DDF2E6; border-radius: 99px; padding: .1rem .5rem; margin: .15rem 0; }
 details.stayrow.booked > summary b { opacity: .6; }
 details.staytips > summary { cursor: pointer; color: var(--muted); font-size: .9rem; padding: .3rem 0; }
+.resa .dlline { color: #8A5A00; font-weight: 600; }
+.alert.warn { border-left-color: #E8912D; }
+button.card.alert.dl { width: 100%; text-align: left; font: inherit; color: inherit; border: 0; cursor: pointer; }
