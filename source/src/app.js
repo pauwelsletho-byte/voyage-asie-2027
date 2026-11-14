@@ -224,7 +224,7 @@ function resaCard(r) {
   return `<button class="card resa ${r.status}" data-resa="${esc(r.id)}">
     <span class="rico t-${r.type}">${icon(r.type)}</span>
     <span class="rmain"><strong>${esc(r.title)}</strong>
-      <small>${esc(fmt(r.date))}${r.time ? " · " + esc(r.time) : ""}${r.ref ? " · n° " + esc(r.ref) : ""}${r.paid ? " · payé " + esc(money(r.paid)) : r.price ? " · " + esc(r.price) : ""}</small>${bk && r.status !== "reserve" ? `<small class="bk ${bk.from <= todayIso() ? "now" : ""}">${bk.from <= todayIso() ? "À faire maintenant" : "À réserver : " + esc(bk.when)}${bk.sites.length ? " · " + esc(bk.sites.slice(0, 3).map((x) => x[0]).join(", ")) : ""}</small>` : ""}${(r.cancelBy && r.cancelBy >= todayIso()) || (r.payOn && r.payOn >= todayIso() && !r.paid) ? `<small class="dlline">${r.cancelBy && r.cancelBy >= todayIso() ? `⏳ Annulable jusqu'au ${esc(fmt(r.cancelBy))}` : ""}${r.cancelBy && r.cancelBy >= todayIso() && r.payOn && r.payOn >= todayIso() && !r.paid ? " · " : ""}${r.payOn && r.payOn >= todayIso() && !r.paid ? `💳 Paiement le ${esc(fmt(r.payOn))}` : ""}</small>` : ""}</span>
+      <small>${esc(fmt(r.date))}${r.time ? " · " + esc(r.time) : ""}${r.ref ? " · n° " + esc(r.ref) : ""}${r.paid ? " · payé " + esc(money(r.paid)) : r.price ? " · " + esc(r.price) : ""}</small>${bk && r.status !== "reserve" ? `<small class="bk ${bk.from <= todayIso() ? "now" : ""}">${bk.from <= todayIso() ? "À faire maintenant" : "À réserver : " + esc(bk.when)}${bk.sites.length ? " · " + esc(bk.sites.slice(0, 3).map((x) => x[0]).join(", ")) : ""}</small>` : ""}${(r.cancelBy && r.cancelBy >= todayIso()) || (r.payOn && r.payOn >= todayIso() && !r.paid) ? `<small class="dlline">${r.cancelBy && r.cancelBy >= todayIso() ? `⏳ Annulable jusqu'au ${esc(fmt(r.cancelBy))}` : ""}${r.cancelBy && r.cancelBy >= todayIso() && r.payOn && r.payOn >= todayIso() && !r.paid ? " · " : ""}${r.payOn && r.payOn >= todayIso() && !r.paid ? `💳 Paiement le ${esc(fmt(r.payOn))}` : ""}</small>` : ""}${r.payOnSite && !r.paid ? `<small class="dlline">💵 À payer sur place</small>` : ""}</span>
     <span class="rside"><span class="badge ${r.status}">${STATUS[r.status] || "—"}</span>${nf ? `<span class="clip">${nf} ${nf > 1 ? "fichiers" : "fichier"}</span>` : ""}</span>
   </button>`;
 }
@@ -361,6 +361,7 @@ function deadlines(t, days = 14) {
   const inN = (d) => { const n = daysBetween(t, d); return n === 0 ? "aujourd'hui" : n === 1 ? "demain" : `dans ${n} jours`; };
   S.resas.forEach((r) => {
     if (r.cancelBy && r.cancelBy >= t && r.cancelBy <= lim) out.push({ d: r.cancelBy, r, icon: "⏳", title: `Annulation gratuite jusqu'au ${fmt(r.cancelBy)} (${inN(r.cancelBy)})`, text: r.title });
+    if (r.payOnSite && !r.paid && r.date && r.date >= t && r.date <= isoOf(new Date(D(t).getTime() + 2 * 86400000))) out.push({ d: r.date, r, icon: "💵", title: `À payer sur place ${inN(r.date)}`, text: r.title + (r.price ? " · " + r.price : "") + " · prévoir la carte ou du liquide" });
     if (r.payOn && r.payOn >= t && r.payOn <= lim) out.push({ d: r.payOn, r, icon: "💳", title: `Paiement le ${fmt(r.payOn)} (${inN(r.payOn)})`, text: r.title + (r.price ? " · " + r.price : "") });
   });
   return out.sort((a, b) => a.d.localeCompare(b.d));
@@ -848,8 +849,9 @@ function openResa(r) {
       </div>
       <div class="two">
         <label>Annulable jusqu'au<input type="date" name="cancelBy" value="${esc(r.cancelBy || "")}"></label>
-        <label>Paiement le<input type="date" name="payOn" value="${esc(r.payOn || "")}"></label>
+        <label>Paiement le<input type="date" name="payOn" value="${esc(r.payOn || "")}" ${r.payOnSite ? "disabled" : ""}></label>
       </div>
+      <label class="onsite"><input type="checkbox" name="payOnSite" ${r.payOnSite ? "checked" : ""}><span>💵 Paiement sur place <small>(à l'arrivée, rappel la veille et le jour même)</small></span></label>
       <div class="two">
         <label>Montant payé pour 2 (€)<input name="paid" inputmode="decimal" value="${esc(r.paid ?? "")}" placeholder="Une fois payé"></label>
         <label>Payé par<select name="paidBy">${Object.entries(people()).map(([k, n]) => `<option value="${k}" ${(r.paidBy || me()) === k ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
@@ -905,14 +907,16 @@ function openResa(r) {
       if (got.paid) set("paid", got.paid, "payé " + money(got.paid) + (got.paidCur !== "EUR" ? ` (${money(got.paidRaw, got.paidCur)})` : ""));
       set("place", got.place, "adresse");
       set("cancelBy", got.cancelBy, "annulation gratuite jusqu'au " + (got.cancelBy ? fmt(got.cancelBy) : ""));
-      set("payOn", got.payOn, "paiement le " + (got.payOn ? fmt(got.payOn) : ""));
+      if (got.payOnSite && !f.payOnSite.checked) { f.payOnSite.checked = true; f.payOn.value = ""; f.payOn.disabled = true; done.push("paiement sur place"); }
+      else set("payOn", got.payOn, "paiement le " + (got.payOn ? fmt(got.payOn) : ""));
       set("localAddr", got.localAddr, "adresse locale");
       if (done.length && f.status.value !== "reserve") { f.status.value = "reserve"; done.push("statut Réservé"); }
       box.innerHTML = done.length ? `<p class="okmsg">Rempli depuis le PDF : ${esc(done.join(" · "))}. Vérifiez puis touchez Enregistrer.</p>`
         : `<p class="muted small">Je n'ai rien trouvé à remplir dans ce PDF. Envoyez-le à Claude dans la conversation si besoin.</p>`;
     } catch (err) { box.innerHTML = `<p class="muted small">Lecture du PDF impossible (${esc(err.message)}).</p>`; }
   }
-  const collect = () => { const f = $("#rf", sh).elements; return { type: f.type.value, title: f.title.value.trim(), status: f.status.value, date: f.date.value, time: f.time.value, ref: f.ref.value.trim(), price: f.price.value.trim(), paid: parseFloat(String(f.paid.value).replace(",", ".").replace(/[^\d.]/g, "")) || null, paidBy: f.paidBy.value, place: f.place.value.trim(), localAddr: f.localAddr.value.trim(), notes: f.notes.value.trim(), cancelBy: f.cancelBy.value, payOn: f.payOn.value }; };
+  const collect = () => { const f = $("#rf", sh).elements; return { type: f.type.value, title: f.title.value.trim(), status: f.status.value, date: f.date.value, time: f.time.value, ref: f.ref.value.trim(), price: f.price.value.trim(), paid: parseFloat(String(f.paid.value).replace(",", ".").replace(/[^\d.]/g, "")) || null, paidBy: f.paidBy.value, place: f.place.value.trim(), localAddr: f.localAddr.value.trim(), notes: f.notes.value.trim(), cancelBy: f.cancelBy.value, payOnSite: f.payOnSite.checked, payOn: f.payOnSite.checked ? "" : f.payOn.value }; };
+  $("#rf", sh).elements.payOnSite.onchange = (e) => { const p = $("#rf", sh).elements.payOn; p.disabled = e.target.checked; if (e.target.checked) p.value = ""; };
   const ga = $("#goaddr", sh); if (ga) ga.onclick = () => openGo(r.localAddr || r.place, r.title, (stageOn(r.date) || {}).id);
   const sa = $("#showaddr", sh); if (sa) sa.onclick = () => showBig($("#rf", sh).elements.localAddr.value, $("#rf", sh).elements.title.value);
   $("#rf", sh).onsubmit = async (e) => { e.preventDefault(); const c = collect(); store().put("resas", r.id, { ...c, files, by: S.user?.email || "" }); closeSheet();

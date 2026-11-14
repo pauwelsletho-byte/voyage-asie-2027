@@ -36,6 +36,7 @@ export function buildIcs(appUrl, resas = [], stampAt = new Date()) {
   for (const r of resas) {
     if (!r.title) continue;
     if (r.cancelBy) add(r.cancelBy, `⏳ Dernier jour pour annuler gratuitement : ${r.title}`, `Annulation gratuite jusqu'au ${r.cancelBy.split("-").reverse().join("/")} inclus.${r.ref ? " Réservation n° " + r.ref + "." : ""}`, "cancel-" + r.id, ALARMS);
+    if (r.payOnSite && !r.paid && r.date) add(r.date, `💵 À payer sur place : ${r.title}`, `Paiement à l'arrivée${r.price ? " (" + r.price + ")" : ""}. Prévoir la carte ou du liquide.`, "onsite-" + r.id, ["-PT15H", "PT9H"]);
     if (r.payOn && !r.paid) add(r.payOn, `💳 Paiement : ${r.title}`, `Paiement prévu ce jour-là${r.price ? " (" + r.price + ")" : ""}. Prévoir l'argent sur le compte.`, "pay-" + r.id, ALARMS);
   }
   return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Asie 2027//FR", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",

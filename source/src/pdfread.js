@@ -68,6 +68,7 @@ export function parseConfirmation(txt, { start, end, rates }) {
   const after = (re, max = 140) => { for (const m of low.matchAll(re)) { const d = all.find((x) => x.idx > m.index && x.idx - m.index < max); if (d) return d.iso; } return null; };
   out.cancelBy = after(/annulation gratuite|annuler gratuitement|annulable gratuitement|sans frais d'annulation|free cancell?ation|cancel for free|free of charge until|cancell?ation is free|免费取消/g);
   out.payOn = after(/vous paierez|vous serez débité|sera débité|sera prélevé|prélèvement le|paiement le|payer le|paiement prévu|à payer avant|pay on|you'?ll pay|you will be charged|will be charged on|payment (?:due|date|on)|charged on/g);
+  out.payOnSite = /paiement sur place|payer sur place|à régler sur place|réglerez sur place|paierez (?:à l'établissement|sur place|à l'hôtel)|payer à l'établissement|pay at the property|pay at (?:the )?hotel|pay on arrival|paiement à l'arrivée|到店付款|到店支付/.test(low) || undefined;
   // adresse
   const adr = txt.match(/(?:adresse|address)\s*[:：]?\s*([^\n]{8,120})/i);
   if (adr) out.place = adr[1].trim();
