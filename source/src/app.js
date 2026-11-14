@@ -123,7 +123,10 @@ function startData() {
     const r = SEED_RESAS[p.i], full = { type: r[0], title: r[1], date: r[2], notes: r[3], status: r[4], price: r[5], files: [] };
     if (p.create) return { coll: "resas", id: "seed-" + p.i + "-" + slug(r[1]), create: full };
     return { coll: "resas", id: "seed-" + String(p.i).padStart(2, "0") + "-" + slug(p.oldTitle), data: Object.fromEntries((p.data || []).map((k) => [k, full[k]])), ifSame: p.ifSame };
-  }))).catch(() => {});
+  }))).then(() => store().migrate("timing-2026-11-14", [
+    { coll: "resas", id: "seed-39-" + slug("Vol Siem Reap → Kuala Lumpur"), data: {}, ifSame: { notes: ["Le soir (AirAsia)", SEED_RESAS[39][3]] } },
+    { coll: "resas", id: "seed-36-" + slug("Vol Hô Chi Minh-Ville → Siem Reap"), data: {}, ifSame: { notes: ["", SEED_RESAS[36][3]] } },
+  ])).catch(() => {});
   S.unsubs.push(store().subscribe("resas", (items, m) => { if (items) S.resas = items; setSync(m); render(); }));
   S.unsubs.push(store().subscribe("checks", (items) => { if (items) S.checks = items; render(); }));
   S.unsubs.push(store().subscribe("expenses", (items) => { if (items) S.expenses = items; render(); }));
